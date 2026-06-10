@@ -14,4 +14,123 @@ body{background:#0a0f0b;color:#e8f5e9;font-family:-apple-system,'Hiragino Kaku G
 .splash-title span{color:#00e676;}
 .splash-warning{margin-top:22px;color:#ffd54f;font-size:15px;}
 .splash-credit{margin-top:10px;color:#9e9e9e;font-size:13px;}
-.start-btn{margin-top:44px;background:#00c853;color:#04140a;border:none;border-radius:14px;padding:16px 52
+.start-btn{margin-top:44px;background:#00c853;color:#04140a;border:none;border-radius:14px;padding:16px 52px;font-size:18px;font-weight:700;}
+.start-btn:active{transform:scale(.97);}
+.header{text-align:center;margin-bottom:14px;}
+.header-title{font-size:20px;font-weight:800;color:#00e676;}
+.header-sub{font-size:12px;color:#9e9e9e;margin-top:2px;}
+.progress{height:8px;background:#1c2a1f;border-radius:4px;overflow:hidden;margin-bottom:22px;}
+.progress-bar{height:100%;width:0;background:#00e676;transition:width .4s;}
+.qnum{color:#69f0ae;font-size:14px;font-weight:700;margin-bottom:8px;}
+.qtext{font-size:17px;font-weight:700;margin-bottom:18px;}
+.opt{display:block;width:100%;text-align:left;background:#121a14;color:#e8f5e9;border:2px solid #263a2c;border-radius:12px;padding:14px;font-size:15px;margin-bottom:12px;line-height:1.6;}
+@media(hover:hover){.opt:hover{border-color:#00e676;}}
+.opt:active{transform:scale(.99);}
+.opt.correct{border-color:#00e676;background:#0d2b17;}
+.opt.wrong{border-color:#ef5350;background:#2b1212;}
+.judge{font-size:28px;font-weight:800;margin:6px 0;}
+.judge.ok{color:#00e676;}
+.judge.ng{color:#ef5350;}
+.exp{background:#121a14;border-left:4px solid #00e676;border-radius:0 10px 10px 0;padding:13px;font-size:14px;margin-top:10px;}
+.shock{background:#102017;border:1px solid #2e7d32;border-radius:12px;padding:13px;font-size:14px;margin-top:12px;}
+.shock-head{color:#ffd54f;font-weight:800;margin-bottom:6px;}
+.next-btn{display:block;width:100%;margin-top:18px;background:#00c853;color:#04140a;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;}
+.hide{display:none;}
+.result{text-align:center;padding-top:50px;}
+.result-label{color:#9e9e9e;font-size:14px;}
+.result-score{font-size:62px;font-weight:800;color:#00e676;margin:6px 0;}
+.result-rank{font-size:24px;font-weight:800;margin-top:8px;}
+.result-msg{margin-top:14px;font-size:15px;color:#cfd8dc;}
+.result-next{margin-top:22px;background:#102017;border:1px solid #2e7d32;border-radius:12px;padding:14px;font-size:14px;text-align:left;}
+.retry-btn{margin-top:26px;background:transparent;color:#00e676;border:2px solid #00e676;border-radius:12px;padding:13px 40px;font-size:16px;font-weight:700;}
+.credit{margin-top:36px;color:#616161;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="screen active" id="splash">
+<div class="splash">
+<div class="splash-label">CAPITALIST TEST</div>
+<div class="splash-title">資本家<span>検定</span><br>3級②</div>
+<div class="splash-warning">⚠️ フリーランスと経費の真実</div>
+<div class="splash-credit">資本家と労働者の差を知れ　by Hiroyuki先生</div>
+<button class="start-btn" onclick="startQuiz()">挑戦する</button>
+</div>
+</div>
+<div class="screen" id="quiz">
+<div class="header">
+<div class="header-title">資本家検定3級②</div>
+<div class="header-sub">知らないと一生損する　by Hiroyuki先生</div>
+</div>
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="qnum" id="qnum"></div>
+<div class="qtext" id="qtext"></div>
+<div id="opts"></div>
+<div id="feedback" class="hide">
+<div class="judge" id="judge"></div>
+<div class="exp" id="exp"></div>
+<div class="shock"><div class="shock-head">⚡ 知らないと損する真実</div><div id="shock"></div></div>
+<button class="next-btn" id="nextBtn" onclick="nextQ()">次へ</button>
+</div>
+</div>
+<div class="screen" id="result">
+<div class="result">
+<div class="result-label">資本家検定3級②　総合スコア</div>
+<div class="result-score" id="score"></div>
+<div class="result-rank" id="rank"></div>
+<div class="result-msg" id="msg"></div>
+<div class="result-next">続編③では、いよいよ「R>G」の世界へ。複利と割引現在価値——お金が働く仕組みを解き明かします。</div>
+<button class="retry-btn" onclick="location.reload()">もう一度挑戦</button>
+<div class="credit">資本家検定3級②<br>by Hiroyuki先生</div>
+</div>
+</div>
+<script>
+var QS=[
+{q:'ロバート・キヨサキの「キャッシュフロー・クワドラント」では、稼ぎ方をE(Employee：従業員)、S(Self-employed：自営業者)、B(Business owner：ビジネスオーナー)、I(Investor：投資家)の4つに分ける。Eと残り3つの決定的な違いは？',
+o:[{t:'稼げる金額の上限が違うだけで、税金の仕組みは4つとも同じだ',ok:false},
+{t:'Eだけが「税金を引かれた後のお金」で生きている。SとBは経費を使った残りに課税され、Iは一律約20%の別世界',ok:true},
+{t:'EとSはどちらも自分の体で働く労働者なので、税制上の違いはない',ok:false},
+{t:'違いは社会的な信用度だけで、お金の流れ自体は4つとも同じ',ok:false}],
+e:'SとBは「売上－経費＝利益」に課税される。Iの配当や株の売却益は申告分離課税で一律20.315%。Eだけが、税金と社会保険料を引かれた後の手取りからしか支出できない。',
+s:'稼ぐ「額」の問題ではない。税金を払う「順番」と「税率」が、立っている場所で最初から決まっている。これがクワドラントの正体。'},
+{q:'フリーランスが自宅(家賃10万円)の一室を仕事部屋にしている。家賃のうち経費にできるのは？',
+o:[{t:'自宅は生活の場なので、1円も経費にできない',ok:false},
+{t:'領収書さえ保管していれば、10万円全額を経費にできる',ok:false},
+{t:'仕事に使う割合(面積や使用時間)で按分した分、例えば3〜5万円程度を経費にできる',ok:true},
+{t:'税務署に事前申請して許可をもらえば全額経費になる',ok:false}],
+e:'これを「家事按分」という。事業で使う割合を合理的に説明できれば、家賃だけでなく電気代・通信費・スマホ代も同じ考え方で按分計上できる。全額はNG、ゼロもNG。',
+s:'会社員の家賃は「ただの生活費」。フリーランスの同じ家賃は「税金を減らす道具」。同じ支出なのに、立場が変わると意味が変わる。'},
+{q:'「会社員にも給与所得控除があるから、フリーランスの経費と実質同じだ」——この主張は？',
+o:[{t:'正しい。むしろ領収書なしで無条件にもらえる分、会社員の方が有利だ',ok:false},
+{t:'正しい。控除と経費は法律上まったく同じものだ',ok:false},
+{t:'誤り。給与所得控除は年収で自動的に決まる固定枠。フリーランスは実額の経費に加えて青色申告特別控除65万円まで上乗せできる',ok:true},
+{t:'誤り。給与所得控除という制度はすでに廃止されている',ok:false}],
+e:'給与所得控除は自分の工夫で1円も増やせない「与えられる枠」。一方フリーランスは、支出の設計次第で経費をコントロールでき、青色申告なら最大65万円の特別控除も加わる。',
+s:'控除は「もらう」もの。経費は「設計する」もの。設計できる側が必ず有利になる——これが税の世界のルール。'},
+{q:'会社員の社会保険料は「会社が半分負担してくれるからお得」と言われる。本当の見方は？',
+o:[{t:'本当にお得。会社が善意で従業員にプレゼントしている',ok:false},
+{t:'会社負担分も本来はあなたの労働への対価(人件費)。実質、自分の給料から払っているのと同じ',ok:true},
+{t:'会社負担分は国が会社に全額補助しているので、誰も損していない',ok:false},
+{t:'フリーランスの保険料の方が常に高額なので、会社員が一方的に有利',ok:false}],
+e:'会社は「給料＋会社負担の社会保険料」の合計を人件費として見ている。会社負担分がなければ、その分を給料として払える余地がある——これが経済学的な見方。',
+s:'給与明細に見えない会社負担分まで足すと、社会保険だけで報酬の約3割が静かに消えている。見えないから、痛みも感じない。'},
+{q:'年収1億円の雇われ社長と、株の配当で1億円受け取る投資家。手取りが多いのはどっち？',
+o:[{t:'雇われ社長。給与は安定収入なので税率が優遇されている',ok:false},
+{t:'ほぼ同じ。同じ1億円なら税額も同じになるのが公平な税制だ',ok:false},
+{t:'投資家。給与は累進課税で最高約55%だが、上場株の配当や売却益は何億円でも一律20.315%',ok:true},
+{t:'雇われ社長。配当には贅沢税が上乗せされるから投資家は不利',ok:false}],
+e:'給与所得は所得税＋住民税で最高約55%。上場株式の配当・譲渡益は申告分離課税20.315%(所得税15.315%＋住民税5%)。同じ1億円でも手取りの差は数千万円規模になる。',
+s:'日本の税制は「働いて稼ぐ人」に最も厳しく、「お金に働かせる人」に最も優しい。なぜそうなっているのか——答えは③「R>Gの世界」で。'}
+];
+var idx=0;var score=0;
+function startQuiz(){document.getElementById('splash').classList.remove('active');document.getElementById('quiz').classList.add('active');showQ();}
+function showQ(){var q=QS[idx];document.getElementById('bar').style.width=(idx/QS.length*100)+'%';document.getElementById('qnum').textContent='Q'+(idx+1)+' / '+QS.length;document.getElementById('qtext').textContent=q.q;var box=document.getElementById('opts');box.innerHTML='';for(var i=0;q.o.length>i;i++){(function(n){var b=document.createElement('button');b.className='opt';b.textContent=q.o[n].t;b.onclick=function(){answer(n,b);};box.appendChild(b);})(i);}
+document.getElementById('feedback').classList.add('hide');}
+function answer(n,btn){var q=QS[idx];var btns=document.querySelectorAll('.opt');for(var j=0;btns.length>j;j++){btns[j].disabled=true;if(q.o[j].ok){btns[j].classList.add('correct');}}
+var ok=q.o[n].ok;var jd=document.getElementById('judge');if(ok){score+=20;jd.textContent='⭕ 正解！';jd.className='judge ok';}else{btn.classList.add('wrong');jd.textContent='✖ 残念…';jd.className='judge ng';}
+document.getElementById('bar').style.width=((idx+1)/QS.length*100)+'%';document.getElementById('exp').textContent=q.e;document.getElementById('shock').textContent=q.s;document.getElementById('feedback').classList.remove('hide');document.getElementById('nextBtn').textContent=(idx===QS.length-1)?'結果を見る':'次へ';window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
+function nextQ(){idx=idx+1;if(QS.length>idx){window.scrollTo(0,0);showQ();}else{showResult();}}
+function showResult(){document.getElementById('quiz').classList.remove('active');document.getElementById('result').classList.add('active');document.getElementById('score').textContent=score+'点';var r='';var m='';if(score===100){r='S級｜資本家の卵';m='あなたはもう労働者の視点を卒業している。次は③で、お金に働かせる側へ。';}else if(score>=80){r='A級｜覚醒済み';m='核心はほぼ見えている。あと一歩で景色が変わる。';}else if(score>=60){r='B級｜気づき始めた人';m='違和感の正体が見え始めている。解説をもう一度読めば追いつける。';}else{r='C級｜善良な労働者';m='今のままだと、会社と国にとって最高のお客様。でも、気づいた今日が分岐点。';}
+document.getElementById('rank').textContent=r;document.getElementById('msg').textContent=m;window.scrollTo(0,0);}
+</script>
+</body>
+</html>
