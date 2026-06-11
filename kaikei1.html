@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>会計学検定3級 by Hiroyuki</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{background:#0c0a12;}
+body{background:#0c0a12;color:#ede7f6;font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-serif;min-height:100vh;line-height:1.7;}
+.screen{display:none;max-width:520px;margin:0 auto;padding:28px 18px 70px;background:#0c0a12;min-height:100vh;}
+.screen.active{display:block;}
+.splash{text-align:center;padding-top:80px;}
+.splash-label{color:#b388ff;font-size:13px;letter-spacing:4px;margin-bottom:18px;}
+.splash-title{font-size:38px;font-weight:800;line-height:1.3;}
+.splash-title span{color:#9c64ff;}
+.splash-warning{margin-top:22px;color:#ffd54f;font-size:15px;}
+.splash-credit{margin-top:10px;color:#9e9e9e;font-size:13px;}
+.start-btn{margin-top:44px;background:#7c4dff;color:#fff;border:none;border-radius:14px;padding:16px 52px;font-size:18px;font-weight:700;}
+.start-btn:active{transform:scale(.97);}
+.header{text-align:center;margin-bottom:14px;}
+.header-title{font-size:20px;font-weight:800;color:#b388ff;}
+.header-sub{font-size:12px;color:#9e9e9e;margin-top:2px;}
+.primer-card{background:#161221;border:1px solid #2d2342;border-radius:14px;padding:16px;margin-bottom:14px;}
+.primer-name{font-size:18px;font-weight:800;color:#b388ff;}
+.primer-en{font-size:12px;color:#9e9e9e;margin-bottom:8px;}
+.primer-body{font-size:14px;}
+.primer-point{margin-top:8px;font-size:14px;color:#ffd54f;font-weight:700;}
+.primer-close{text-align:center;margin-top:20px;font-size:14px;color:#cfc3e8;}
+.progress{height:8px;background:#221a33;border-radius:4px;overflow:hidden;margin-bottom:22px;}
+.progress-bar{height:100%;width:0;background:#9c64ff;transition:width .4s;}
+.qnum{color:#b388ff;font-size:14px;font-weight:700;margin-bottom:8px;}
+.qtext{font-size:17px;font-weight:700;margin-bottom:18px;color:#ffffff;background:#161221;border:1px solid #2d2342;border-radius:12px;padding:14px;}
+.opt{display:block;width:100%;text-align:left;background:#161221;color:#ede7f6;border:2px solid #2d2342;border-radius:12px;padding:14px;font-size:15px;margin-bottom:12px;line-height:1.6;}
+@media(hover:hover){.opt:hover{border-color:#9c64ff;}}
+.opt:active{transform:scale(.99);}
+.opt.correct{border-color:#9c64ff;background:#1f1433;}
+.opt.wrong{border-color:#ef5350;background:#2b1212;}
+.judge{font-size:28px;font-weight:800;margin:6px 0;}
+.judge.ok{color:#b388ff;}
+.judge.ng{color:#ef5350;}
+.exp{background:#161221;border-left:4px solid #9c64ff;border-radius:0 10px 10px 0;padding:13px;font-size:14px;margin-top:10px;}
+.shock{background:#191027;border:1px solid #5e35b1;border-radius:12px;padding:13px;font-size:14px;margin-top:12px;}
+.shock-head{color:#ffd54f;font-weight:800;margin-bottom:6px;}
+.next-btn{display:block;width:100%;margin-top:18px;background:#7c4dff;color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;}
+.hide{display:none;}
+.result{text-align:center;padding-top:50px;}
+.result-label{color:#9e9e9e;font-size:14px;}
+.result-score{font-size:62px;font-weight:800;color:#b388ff;margin:6px 0;}
+.result-rank{font-size:24px;font-weight:800;margin-top:8px;}
+.result-msg{margin-top:14px;font-size:15px;color:#cfd8dc;}
+.result-next{margin-top:22px;background:#191027;border:1px solid #5e35b1;border-radius:12px;padding:14px;font-size:14px;text-align:left;}
+.retry-btn{margin-top:26px;background:transparent;color:#b388ff;border:2px solid #9c64ff;border-radius:12px;padding:13px 40px;font-size:16px;font-weight:700;}
+.credit{margin-top:36px;color:#616161;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="screen active" id="splash">
+<div class="splash">
+<div class="splash-label">ACCOUNTING TEST</div>
+<div class="splash-title">会計学<span>検定</span><br>3級</div>
+<div class="splash-warning">⚠️ 簿記が「なぜそうなっているか」の真実</div>
+<div class="splash-credit">数字の裏側を読め　by Hiroyuki先生</div>
+<button class="start-btn" onclick="goPrimer()">挑戦する</button>
+</div>
+</div>
+<div class="screen" id="primer">
+<div class="header">
+<div class="header-title">第0問｜3枚の地図</div>
+<div class="header-sub">採点なし。読むだけでいい。</div>
+</div>
+<div class="primer-card">
+<div class="primer-name">📷 BS（ビーエス）</div>
+<div class="primer-en">Balance Sheet／貸借対照表</div>
+<div class="primer-body">決算日という一瞬の「写真」。いま何を持っていて（左）、そのお金をどこから持ってきたか（右）が写っている。</div>
+<div class="primer-point">→ 分かること：会社の体格と体質</div>
+</div>
+<div class="primer-card">
+<div class="primer-name">🎬 PL（ピーエル）</div>
+<div class="primer-en">Profit and Loss Statement／損益計算書</div>
+<div class="primer-body">1年間の「動画」。この1年でいくら売って、いくら使って、結局いくら儲けたか。</div>
+<div class="primer-point">→ 分かること：今年の成績</div>
+</div>
+<div class="primer-card">
+<div class="primer-name">💴 CF（シーエフ）</div>
+<div class="primer-en">Cash Flow Statement／キャッシュフロー計算書</div>
+<div class="primer-body">1年間の「通帳の動き」。利益という"意見"ではなく、現金がどう出入りしたかという"事実"の記録。</div>
+<div class="primer-point">→ 分かること：お金の本当の動き</div>
+</div>
+<div class="primer-close">写真（BS）と動画（PL）と通帳（CF）。<br>3枚揃って初めて、会社の正体が見える。</div>
+<button class="next-btn" onclick="startQuiz()">では、本番へ</button>
+</div>
+<div class="screen" id="quiz">
+<div class="header">
+<div class="header-title">会計学検定3級</div>
+<div class="header-sub">数字の裏側を読め　by Hiroyuki先生</div>
+</div>
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="qnum" id="qnum"></div>
+<div class="qtext" id="qtext"></div>
+<div id="opts"></div>
+<div id="feedback" class="hide">
+<div class="judge" id="judge"></div>
+<div class="exp" id="exp"></div>
+<div class="shock"><div class="shock-head">⚡ 数字の裏側</div><div id="shock"></div></div>
+<button class="next-btn" id="nextBtn" onclick="nextQ()">次へ</button>
+</div>
+</div>
+<div class="screen" id="result">
+<div class="result">
+<div class="result-label">会計学検定3級　総合スコア</div>
+<div class="result-score" id="score"></div>
+<div class="result-rank" id="rank"></div>
+<div class="result-msg" id="msg"></div>
+<div class="result-next">簿記検定・資本家検定とこの会計学検定は、地下でトンネルが繋がっています。3シリーズ制覇で、数字の世界の地図が完成します。</div>
+<button class="retry-btn" onclick="location.reload()">もう一度挑戦</button>
+<div class="credit">会計学検定3級<br>by Hiroyuki先生</div>
+</div>
+</div>
+<script>
+var QS=[
+{q:'コンビニで100円のパンを仕入れた。複式簿記ではこれを「仕入100／現金100」と2つ書く。なぜ1つの取引を2回書くのか？',
+o:[{t:'計算ミスを防ぐため。同じ金額を2か所に書いて検算しているだけで、本質的な意味はない',ok:false},
+{t:'借方は自社の記録、貸方は取引相手側の記録で、相手のためにも書いている',ok:false},
+{t:'すべての取引には「お金の出どころ」と「使いみち」という2つの顔があり、その両面を記録するため',ok:true},
+{t:'国際会計基準で2回記帳することが義務付けられているため',ok:false}],
+e:'複式簿記を生んだのは、特定の天才ではなく500年以上前のベネチアの商人たち。日々の商売の実務の中から自然に育ち、1494年に数学者ルカ・パチョーリが本にまとめて世界に広まった。理論より先に実務があった学問。貸借が一致して検算になるのは、あくまで副産物。',
+s:'500年前の商人から現代のトヨタまで、世界中が同じ「お金の文法」を使っている。人類最高の発明の一つは、教科書ではなく市場から生まれた。'},
+{q:'損益計算書（PL）で計算した「当期純利益」。決算が終わったあと、この利益はどこへ行く？',
+o:[{t:'翌年のPLに繰り越され、来年の利益と合算される',ok:false},
+{t:'現金としてBSの左側「現金預金」にそのまま計上される',ok:false},
+{t:'株主に全額配当されるので、決算後はどこにも残らない',ok:false},
+{t:'BSの純資産の部「繰越利益剰余金」に積み上がっていく',ok:true}],
+e:'見る場所はシンプル。今年いくら儲けたか→PLの一番下「当期純利益」で一発。創業以来いくら稼いで残してきたか→BSの「利益剰余金」で一発。PLは毎年リセットされる「今年の成績表」、BSはそれが積み重なる「会社の通帳」。2つは利益剰余金で繋がっている。',
+s:'PLが良くてもBSの剰余金が薄い会社は「今年だけの会社」。BSが分厚い会社は歴史で稼いできた会社。2枚セットで見て初めて正体が見える。'},
+{q:'PLは1000万円の黒字。なのに会社が潰れた。なぜ？',
+o:[{t:'粉飾決算をしていたから。本当は赤字だった',ok:false},
+{t:'売上は商品を渡した時に計上されるが、現金はまだ入っていない（売掛金）。入金より支払いが先に来て資金が尽きた',ok:true},
+{t:'法人税が利益の大半を持っていき、手元資金がなくなったから',ok:false},
+{t:'黒字企業の倒産は法律上あり得ないので、この前提自体が誤り',ok:false}],
+e:'会計は「現金が動いた時」ではなく「取引が発生した時」に記録する（発生主義）。だから利益とキャッシュは必ずズレる。このズレを監視するために、財務三表の3枚目「キャッシュフロー計算書」がある。利益は意見、キャッシュは事実。',
+s:'「儲かってる＝お金がある」は錯覚。プロがPLの次にキャッシュフロー計算書を開くのは、意見ではなく事実を確認するため。'},
+{q:'貸借対照表（BS）の右側（負債と純資産）。これが本当に表しているものは？',
+o:[{t:'会社が持っている財産のリスト',ok:false},
+{t:'過去1年間に支払ったお金の記録',ok:false},
+{t:'お金を「どこから持ってきたか」の一覧。負債＝いつか返す他人のお金、純資産＝返さなくていい自分のお金',ok:true},
+{t:'会社の借金一覧であり、少なければ少ないほど必ず優良企業といえる',ok:false}],
+e:'右側＝調達、左側＝その使いみち（運用）。負債は債権者を巻き込むリスクであると同時に、「それだけ貸してもらえる」という信用の証でもある。豆知識：会社法は負債総額200億円以上（または資本金5億円以上）の会社を「大会社」と定義し、会計監査人の設置を義務付けている。負債の大きさ＝巻き込む利害関係者の多さ、という思想。',
+s:'銀行も投資家も、まず右側を見る。BSの右側には、その会社が「誰のお金で生きているか」という生き方が書いてある。'},
+{q:'300万円の新車を買った。お金は今年300万円出ていったのに、経費にできるのは今年50万円だけ。なぜこんな面倒なことをする？',
+o:[{t:'高額な買い物を税務署が分割払い扱いにするルールだから',ok:false},
+{t:'一度に経費にすると脱税を疑われるため、慣習として分けている',ok:false},
+{t:'車の市場価値（時価）の下落を毎年測定して記録している',ok:false},
+{t:'車は何年も働いて売上に貢献するから、費用も使う期間に分けて売上と対応させる（費用収益対応の原則）',ok:true}],
+e:'まず「50万円」の出どころ。税法は資産ごとに「何年使えるか」を法定耐用年数として定めていて、新車の普通乗用車は6年（中古車や軽自動車は別の年数）。300万円÷6年＝毎年50万円というわけ。なぜ分けるのか。買った年だけ大赤字、翌年から黒字——では毎年の本当の実力が見えない。だから費用を稼働期間に配分する。時価の測定ではなく、あくまで取得原価の配分。そして2年目以降は、お金が1円も出ていかないのに費用が計上される。これは税法上の損金にもなるので、利益を圧縮して節税にもなる。',
+s:'現金は減らないのに税金だけ減る——資本家検定②でやった経費の話と、会計と税法は地下でトンネルが通っている。'}
+];
+var idx=0;var score=0;
+function goPrimer(){document.getElementById('splash').classList.remove('active');document.getElementById('primer').classList.add('active');window.scrollTo(0,0);}
+function startQuiz(){document.getElementById('primer').classList.remove('active');document.getElementById('quiz').classList.add('active');window.scrollTo(0,0);showQ();}
+function showQ(){var q=QS[idx];document.getElementById('bar').style.width=(idx/QS.length*100)+'%';document.getElementById('qnum').textContent='Q'+(idx+1)+' / '+QS.length;document.getElementById('qtext').textContent=q.q;var box=document.getElementById('opts');box.innerHTML='';for(var i=0;q.o.length>i;i++){(function(n){var b=document.createElement('button');b.className='opt';b.textContent=q.o[n].t;b.onclick=function(){answer(n,b);};box.appendChild(b);})(i);}
+document.getElementById('feedback').classList.add('hide');}
+function answer(n,btn){var q=QS[idx];var btns=document.querySelectorAll('.opt');for(var j=0;btns.length>j;j++){btns[j].disabled=true;if(q.o[j].ok){btns[j].classList.add('correct');}}
+var ok=q.o[n].ok;var jd=document.getElementById('judge');if(ok){score+=20;jd.textContent='⭕ 正解！';jd.className='judge ok';}else{btn.classList.add('wrong');jd.textContent='✖ 残念…';jd.className='judge ng';}
+document.getElementById('bar').style.width=((idx+1)/QS.length*100)+'%';document.getElementById('exp').textContent=q.e;document.getElementById('shock').textContent=q.s;document.getElementById('feedback').classList.remove('hide');document.getElementById('nextBtn').textContent=(idx===QS.length-1)?'結果を見る':'次へ';window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
+function nextQ(){idx=idx+1;if(QS.length>idx){window.scrollTo(0,0);showQ();}else{showResult();}}
+function showResult(){document.getElementById('quiz').classList.remove('active');document.getElementById('result').classList.add('active');document.getElementById('score').textContent=score+'点';var r='';var m='';if(score===100){r='S級｜会計の目を持つ者';m='あなたはもう数字の表面ではなく、裏側を読んでいる。';}else if(score>=80){r='A級｜簿記の理解者';m='仕組みの核心はほぼ見えている。あと一歩。';}else if(score>=60){r='B級｜目覚めかけた人';m='「知ってるようで知らなかった」の正体が見え始めている。';}else{r='C級｜数字が苦手な人';m='大丈夫、第0問の3枚の地図に戻れば、景色が変わる。';}
+document.getElementById('rank').textContent=r;document.getElementById('msg').textContent=m;window.scrollTo(0,0);}
+</script>
+</body>
+</html>
