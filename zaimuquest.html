@@ -1,0 +1,1229 @@
+<!DOCTYPE html><html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ZAIMU QUEST</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:#06060e;
+    color:#f5f5f0;
+    font-family:'DotGothic16','Hiragino Kaku Gothic ProN',monospace;
+    display:flex; justify-content:center;
+    min-height:100vh;
+    overflow-y:auto;
+  }
+  #game {
+    width:100%; max-width:430px;
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    padding:10px 10px 24px;
+    position:relative;
+  }
+  #scan {
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  }
+  .hidden { display:none !important; }
+  .win {
+    background:#06060e;
+    border:3px solid #f5f5f0;
+    border-radius:6px;
+    box-shadow:0 0 0 3px #06060e, 0 0 0 5px #f5f5f0;
+    padding:12px 14px;
+  }
+  #title {
+    flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
+    text-align:center; min-height:80vh;
+  }
+  #title h1 {
+    font-size:34px; letter-spacing:4px; line-height:1.4;
+    color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+  }
+  #title .sub { font-size:14px; color:#9aa0c0; letter-spacing:2px; }
+  #startBtn {
+    font-family:inherit; font-size:18px; letter-spacing:3px;
+    color:#f5f5f0; background:#06060e; border:3px solid #f5f5f0; border-radius:6px;
+    padding:14px 34px; cursor:pointer;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f5f5f0;
+    animation:blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity:.35; } }
+  #title .note { font-size:11px; color:#666c8f; line-height:1.9; }
+  #battle { flex:1; display:flex; flex-direction:column; gap:10px; }
+  #bossArea {
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:14px 0 6px;
+    background:radial-gradient(ellipse at 50% 80%, #1b1340 0%, #06060e 70%);
+    border-radius:8px;
+  }
+  #bossName { font-size:15px; letter-spacing:2px; color:#c4b5fd; }
+  #bossSprite { image-rendering:pixelated; position:relative; }
+  #bossSprite .px { position:absolute; width:1px; height:1px; }
+  .bossbar { width:200px; }
+  .hpRow { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .hpShell { flex:1; height:12px; border:2px solid #f5f5f0; border-radius:3px; background:#111; overflow:hidden; }
+  .hpFill { height:100%; transition:width .45s steps(8); }
+  #bossHpFill { background:linear-gradient(#f87171,#b91c1c); width:100%; }
+  #plHpFill { background:linear-gradient(#86efac,#15803d); width:100%; }
+  .hpNum { min-width:64px; text-align:right; font-size:12px; }
+  #playerBar { display:flex; flex-direction:column; gap:6px; padding:10px 12px; position:relative; }
+  #playerBar .who { font-size:13px; color:#fbbf24; letter-spacing:1px; margin-bottom:2px; }
+  #playerBar .statRow { display:flex; align-items:center; gap:8px; }
+  #playerBar .barLbl { font-size:12px; letter-spacing:1px; width:24px; }
+  #playerBar .hpShell { flex:1; }
+  #playerBar .hpNum { min-width:74px; font-size:12px; }
+  #plMpFill { background:linear-gradient(#7dd3fc,#2563eb); width:100%; }
+  #mpToast {
+    position:fixed; top:42%; left:50%; transform:translate(-50%,-50%) scale(0);
+    z-index:72; background:#06060e; border:3px solid #f87171; border-radius:6px;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f87171;
+    color:#fecaca; font-size:18px; letter-spacing:3px; padding:14px 26px; pointer-events:none;
+  }
+  .toastIn { animation:toast 1.1s ease-out forwards; }
+  @keyframes toast { 0%{transform:translate(-50%,-50%) scale(0)} 15%{transform:translate(-50%,-50%) scale(1.1)} 30%{transform:translate(-50%,-50%) scale(1)} 80%{transform:translate(-50%,-50%) scale(1); opacity:1} 100%{transform:translate(-50%,-50%) scale(1); opacity:0} }
+  .cmd .mpcost { color:#7dd3fc; font-size:12px; }
+  #msgWin { min-height:110px; font-size:15px; line-height:1.8; letter-spacing:1px; position:relative; cursor:pointer; user-select:none; }
+  #msgText { white-space:pre-wrap; }
+  #nextCursor {
+    position:absolute; right:12px; bottom:6px; font-size:14px; color:#ffd23f;
+    animation:blink 1s steps(2) infinite;
+  }
+  #noteWin {
+    border-color:#7dd3fc;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #7dd3fc;
+    font-size:13px; line-height:1.8; color:#dbeafe;
+  }
+  #noteWin .tag { color:#7dd3fc; font-size:12px; letter-spacing:2px; display:block; margin-bottom:4px; }
+  #cmds { display:flex; flex-direction:column; gap:8px; }
+  .cmdLabel { font-size:12px; color:#9aa0c0; letter-spacing:2px; padding-left:4px; }
+  .cmd {
+    font-family:inherit; text-align:left;
+    font-size:13.5px; line-height:1.55; letter-spacing:.5px;
+    color:#f5f5f0; background:#0c0c1c;
+    border:2px solid #f5f5f0; border-radius:5px;
+    padding:10px 12px 10px 30px; cursor:pointer; position:relative;
+  }
+  .cmd::before { content:"▶"; position:absolute; left:10px; color:#ffd23f; opacity:0; }
+  .cmd:active { background:#26264a; }
+  .cmd:active::before { opacity:1; }
+  .cmd:disabled { opacity:.45; }
+  @keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-7px,2px)} 40%{transform:translate(6px,-2px)} 60%{transform:translate(-5px,1px)} 80%{transform:translate(4px,-1px)} }
+  .shake { animation:shake .35s linear; }
+  @keyframes bossflash { 0%,100%{filter:none} 50%{filter:brightness(8) saturate(0)} }
+  .bossHit { animation:bossflash .18s linear 2; }
+  #flash { position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .flashWhite { background:#fff; animation:fl .25s linear; }
+  .flashGold  { background:#ffd23f; animation:fl .6s linear; }
+  @keyframes fl { 0%{opacity:.9} 100%{opacity:0} }
+  #critStamp {
+    position:fixed; top:32%; left:50%; z-index:70;
+    transform:translate(-50%,-50%) rotate(-8deg) scale(0);
+    font-size:42px; letter-spacing:6px; color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+    pointer-events:none;
+  }
+  .stampIn { animation:stamp .9s cubic-bezier(.2,2.4,.4,1) forwards; }
+  @keyframes stamp { 0%{transform:translate(-50%,-50%) rotate(-8deg) scale(0)} 60%{transform:translate(-50%,-50%) rotate(-8deg) scale(1.25)} 100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1)} }
+  .dmgPop {
+    position:absolute; z-index:40;
+    font-size:27px; color:#ffffff; font-weight:bold; letter-spacing:1px;
+    text-shadow:-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 0 #000;
+    pointer-events:none;
+    animation:pop 1.1s ease-out forwards;
+  }
+  .dmgPop.crit { color:#ffd23f; font-size:34px; }
+  @keyframes pop { 0%{opacity:0; transform:translateY(8px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-36px)} }
+  @media (prefers-reduced-motion: reduce){
+    .shake,.bossHit,.stampIn,.flashWhite,.flashGold,.dmgPop,#startBtn,#nextCursor { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="title">
+    <div>
+      <div class="sub">— 完全版 —</div>
+      <h1>ZAIMU<br>QUEST</h1>
+      <div class="sub" style="margin-top:10px">魔王・財務省を 論破せよ</div>
+    </div>
+    全部確認できました。では完全版のコードをそのまま出します。メッセージ上のコピーアイコン（重なった四角）でコピーして、GitHubの編集画面に貼り付けてください。
+
+<!DOCTYPE html><html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ZAIMU QUEST</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:#06060e;
+    color:#f5f5f0;
+    font-family:'DotGothic16','Hiragino Kaku Gothic ProN',monospace;
+    display:flex; justify-content:center;
+    min-height:100vh;
+    overflow-y:auto;
+  }
+  #game {
+    width:100%; max-width:430px;
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    padding:10px 10px 24px;
+    position:relative;
+  }
+  #scan {
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  }
+  .hidden { display:none !important; }
+  .win {
+    background:#06060e;
+    border:3px solid #f5f5f0;
+    border-radius:6px;
+    box-shadow:0 0 0 3px #06060e, 0 0 0 5px #f5f5f0;
+    padding:12px 14px;
+  }
+  #title {
+    flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
+    text-align:center; min-height:80vh;
+  }
+  #title h1 {
+    font-size:34px; letter-spacing:4px; line-height:1.4;
+    color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+  }
+  #title .sub { font-size:14px; color:#9aa0c0; letter-spacing:2px; }
+  #startBtn {
+    font-family:inherit; font-size:18px; letter-spacing:3px;
+    color:#f5f5f0; background:#06060e; border:3px solid #f5f5f0; border-radius:6px;
+    padding:14px 34px; cursor:pointer;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f5f5f0;
+    animation:blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity:.35; } }
+  #title .note { font-size:11px; color:#666c8f; line-height:1.9; }
+  #battle { flex:1; display:flex; flex-direction:column; gap:10px; }
+  #bossArea {
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:14px 0 6px;
+    background:radial-gradient(ellipse at 50% 80%, #1b1340 0%, #06060e 70%);
+    border-radius:8px;
+  }
+  #bossName { font-size:15px; letter-spacing:2px; color:#c4b5fd; }
+  #bossSprite { image-rendering:pixelated; position:relative; }
+  #bossSprite .px { position:absolute; width:1px; height:1px; }
+  .bossbar { width:200px; }
+  .hpRow { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .hpShell { flex:1; height:12px; border:2px solid #f5f5f0; border-radius:3px; background:#111; overflow:hidden; }
+  .hpFill { height:100%; transition:width .45s steps(8); }
+  #bossHpFill { background:linear-gradient(#f87171,#b91c1c); width:100%; }
+  #plHpFill { background:linear-gradient(#86efac,#15803d); width:100%; }
+  .hpNum { min-width:64px; text-align:right; font-size:12px; }
+  #playerBar { display:flex; flex-direction:column; gap:6px; padding:10px 12px; position:relative; }
+  #playerBar .who { font-size:13px; color:#fbbf24; letter-spacing:1px; margin-bottom:2px; }
+  #playerBar .statRow { display:flex; align-items:center; gap:8px; }
+  #playerBar .barLbl { font-size:12px; letter-spacing:1px; width:24px; }
+  #playerBar .hpShell { flex:1; }
+  #playerBar .hpNum { min-width:74px; font-size:12px; }
+  #plMpFill { background:linear-gradient(#7dd3fc,#2563eb); width:100%; }
+  #mpToast {
+    position:fixed; top:42%; left:50%; transform:translate(-50%,-50%) scale(0);
+    z-index:72; background:#06060e; border:3px solid #f87171; border-radius:6px;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f87171;
+    color:#fecaca; font-size:18px; letter-spacing:3px; padding:14px 26px; pointer-events:none;
+  }
+  .toastIn { animation:toast 1.1s ease-out forwards; }
+  @keyframes toast { 0%{transform:translate(-50%,-50%) scale(0)} 15%{transform:translate(-50%,-50%) scale(1.1)} 30%{transform:translate(-50%,-50%) scale(1)} 80%{transform:translate(-50%,-50%) scale(1); opacity:1} 100%{transform:translate(-50%,-50%) scale(1); opacity:0} }
+  .cmd .mpcost { color:#7dd3fc; font-size:12px; }
+  #msgWin { min-height:110px; font-size:15px; line-height:1.8; letter-spacing:1px; position:relative; cursor:pointer; user-select:none; }
+  #msgText { white-space:pre-wrap; }
+  #nextCursor {
+    position:absolute; right:12px; bottom:6px; font-size:14px; color:#ffd23f;
+    animation:blink 1s steps(2) infinite;
+  }
+  #noteWin {
+    border-color:#7dd3fc;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #7dd3fc;
+    font-size:13px; line-height:1.8; color:#dbeafe;
+  }
+  #noteWin .tag { color:#7dd3fc; font-size:12px; letter-spacing:2px; display:block; margin-bottom:4px; }
+  #cmds { display:flex; flex-direction:column; gap:8px; }
+  .cmdLabel { font-size:12px; color:#9aa0c0; letter-spacing:2px; padding-left:4px; }
+  .cmd {
+    font-family:inherit; text-align:left;
+    font-size:13.5px; line-height:1.55; letter-spacing:.5px;
+    color:#f5f5f0; background:#0c0c1c;
+    border:2px solid #f5f5f0; border-radius:5px;
+    padding:10px 12px 10px 30px; cursor:pointer; position:relative;
+  }
+  .cmd::before { content:"▶"; position:absolute; left:10px; color:#ffd23f; opacity:0; }
+  .cmd:active { background:#26264a; }
+  .cmd:active::before { opacity:1; }
+  .cmd:disabled { opacity:.45; }
+  @keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-7px,2px)} 40%{transform:translate(6px,-2px)} 60%{transform:translate(-5px,1px)} 80%{transform:translate(4px,-1px)} }
+  .shake { animation:shake .35s linear; }
+  @keyframes bossflash { 0%,100%{filter:none} 50%{filter:brightness(8) saturate(0)} }
+  .bossHit { animation:bossflash .18s linear 2; }
+  #flash { position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .flashWhite { background:#fff; animation:fl .25s linear; }
+  .flashGold  { background:#ffd23f; animation:fl .6s linear; }
+  @keyframes fl { 0%{opacity:.9} 100%{opacity:0} }
+  #critStamp {
+    position:fixed; top:32%; left:50%; z-index:70;
+    transform:translate(-50%,-50%) rotate(-8deg) scale(0);
+    font-size:42px; letter-spacing:6px; color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+    pointer-events:none;
+  }
+  .stampIn { animation:stamp .9s cubic-bezier(.2,2.4,.4,1) forwards; }
+  @keyframes stamp { 0%{transform:translate(-50%,-50%) rotate(-8deg) scale(0)} 60%{transform:translate(-50%,-50%) rotate(-8deg) scale(1.25)} 100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1)} }
+  .dmgPop {
+    position:absolute; z-index:40;
+    font-size:27px; color:#ffffff; font-weight:bold; letter-spacing:1px;
+    text-shadow:-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 0 #000;
+    pointer-events:none;
+    animation:pop 1.1s ease-out forwards;
+  }
+  .dmgPop.crit { color:#ffd23f; font-size:34px; }
+  @keyframes pop { 0%{opacity:0; transform:translateY(8px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-36px)} }
+  @media (prefers-reduced-motion: reduce){
+    .shake,.bossHit,.stampIn,.flashWhite,.flashGold,.dmgPop,#startBtn,#nextCursor { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="title">
+    <div>
+      <div class="sub">— 完全版 —</div>
+      <h1>ZAIMU<br>QUEST</h1>
+      <div class="sub" style="margin-top:10px">魔王・財務省を 論破せよ</div>
+    </div>
+    <button id="startBtn">▶ 戦闘開始</button>
+    <div class="note">※ボタンを押すとBGMが流れます<br>※強い反論はLP（ロジックポイント）を消費</div>
+  </div>
+  <div id="battle" class="hidden">
+    <div id="bossArea">
+      <div id="bossName">魔王 財務省（第一形態）</div>
+      <div id="bossSub" style="font-size:12px;color:#a78bfa;letter-spacing:1px;margin-top:-2px">— 1400兆円の幻影 —</div>
+      <div id="bossSprite"></div>
+      <div class="hpRow bossbar">
+        <div class="hpShell"><div id="bossHpFill" class="hpFill"></div></div>
+        <div class="hpNum" id="bossHpNum"></div>
+      </div>
+    </div>
+    <div id="playerBar" class="win">
+      <div class="who">納税者（勇者）</div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#fbbf24">HP</span>
+        <div class="hpShell"><div id="plHpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plHpNum"></span>
+      </div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#7dd3fc">LP</span>
+        <div class="hpShell"><div id="plMpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plMpNum"></span>
+      </div>
+    </div>
+    <div id="msgWin" class="win">
+      <div id="msgText"></div>
+      <div id="nextCursor" class="hidden">▼</div>
+    </div>
+    <div id="noteWin" class="win hidden">
+      <span class="tag">▼ かいせつ</span>
+      <div id="noteText"></div>
+    </div>
+    <div id="cmds" class="hidden">
+      <div class="cmdLabel" id="cmdLabel">▼ どう はんろんする？（すべて正解。威力がちがう）</div>
+      <div id="cmdBtns"></div>
+    </div>
+  </div>
+  <div id="scan"></div>
+  <div id="flash"></div>
+  <div id="critStamp">はんろんふのう！</div>
+  <div id="mpToast">LPが たりない！</div>
+</div>
+<script>
+"use strict";
+const PAL = { P:"#8b5cf6", D:"#5b21b6", B:"#1e1b4b", W:"#f5f5f0", K:"#000", R:"#ef4444", G:"#fbbf24" };
+const SPRITE = [
+"..R..........R..","..RP..........PR.","..PPPPPPPPPPPP..",".PPPPPPPPPPPPPP.",".PPKKWWPPWWKKPP.",".PPKGWWPPWWGKPP.",".PPPPPPPPPPPPPP.","..PPPKKKKKKPPP.","...PPPPPPPPPP...","..BBBBBWWBBBBB..",".BBBBBWRRWBBBBB.",".BBBBBWRRWBBBBB.",".BBBBBBRRBBBBBB.",".BBBBBBRRBBBBBB.",".BBB.BBBBBB.BBB.","................"];
+function drawBoss(scale){
+  const host=document.getElementById("bossSprite");
+  host.style.width=16*scale+"px"; host.style.height=16*scale+"px";
+  let shadows=[];
+  SPRITE.forEach((row,y)=>{[...row].forEach((c,x)=>{if(PAL[c])shadows.push(`${x*scale}px ${y*scale}px 0 ${scale/2}px ${PAL[c]}`);});});
+  const px=document.createElement("div"); px.className="px"; px.style.boxShadow=shadows.join(",");
+  host.appendChild(px);
+}
+drawBoss(7);
+
+let AC=null, bgmTimer=null, master=null;
+function audioInit(){
+AC=new (window.AudioContext||window.webkitAudioContext)();
+master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+}
+function beep(type,freq,t0,dur,vol){
+const o=AC.createOscillator(),g=AC.createGain();
+o.type=type; o.frequency.setValueAtTime(freq,t0);
+g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+.02);
+}
+const N={A2:110,C3:130.8,D3:146.8,E3:164.8,F3:174.6,G3:196,A3:220,C4:261.6,D4:293.7,E4:329.6,F4:349.2,G4:392,A4:440,B4:493.9,C5:523.3,D5:587.3,E5:659.3,F5:698.5,R:0};
+const LEAD=[“A4”,“R”,“C5”,“A4”,“E5”,“R”,“D5”,“C5”,“B4”,“R”,“D5”,“B4”,“E4”,“G4”,“A4”,“R”,“A4”,“R”,“C5”,“A4”,“F4”,“R”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”,“R”,“R”,“R”];
+const BASS=[“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“D3”,“D3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“C3”,“C3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”];
+function startBGM(){
+stopBGM(); const stepDur=.145; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=LEAD[step%LEAD.length],b=BASS[step%BASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.9,.045);if(N[b]&&step%2===0)beep(“triangle”,N[b],t,stepDur1.7,.07);step++;},stepDur1000);
+}
+const FLEAD=[“A4”,“A4”,“C5”,“E5”,“A4”,“A4”,“C5”,“F5”,“A4”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”];
+const FBASS=[“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“E3”,“E3”,“E3”,“E3”];
+function startBGMFinal(){
+stopBGM(); const stepDur=.115; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=FLEAD[step%FLEAD.length],b=FBASS[step%FBASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.85,.05);if(N[b])beep(“sawtooth”,N[b],t,stepDur1.3,.06);step++;},stepDur1000);
+}
+const SLEAD=[“A4”,“R”,“G4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“E4”,“F4”,“E4”,“R”,“R”,“R”,“C4”,“R”,“D4”,“R”,“E4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“C4”,“R”,“R”,“R”];
+const SBASS=[“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“D3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”,“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“C3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”];
+function startBGMSad(){
+stopBGM(); const stepDur=.34; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=SLEAD[step%SLEAD.length],b=SBASS[step%SBASS.length];if(N[l])beep(“triangle”,N[l],t,stepDur1.6,.06);if(N[b])beep(“sine”,N[b],t,stepDur2.2,.07);step++;},stepDur1000);
+}
+function stopBGM(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;}}
+const SFX={
+hit(){const t=AC.currentTime;beep(“square”,520,t,.07,.12);beep(“square”,260,t+.07,.1,.12);},
+weak(){const t=AC.currentTime;beep(“square”,330,t,.08,.1);},
+crit(){const t=AC.currentTime;[660,880,1175,1568].forEach((f,i)=>beep(“square”,f,t+i.07,.12,.13));beep(“sawtooth”,80,t,.4,.12);},
+hurt(){const t=AC.currentTime;beep(“sawtooth”,120,t,.18,.14);beep(“sawtooth”,90,t+.1,.2,.12);},
+select(){const t=AC.currentTime;beep(“square”,880,t,.05,.08);}
+};
+
+let plHP=200,plMax=200,plMP=20,plMpMax=20;
+let bossHP,bossMax,phaseIndex=0;
+
+const SET_SHAKKIN=[
+{label:”「一人あたり1100万円」はおかしい。国債の貸し手は国民側だ”,dmg:15,mp:0,crit:false,counter:“財務省「ですが 将来世代への\nツケであることに 変わりは…」”,counterDmg:8,note:“国債の債権者の大半は国内（日銀・銀行・保険）。「国民一人あたりの借金」という割り算は、債務者と債権者を混同した印象操作。ただし将来の利払い・償還が再分配の形で現役世代に影響する面は残るため、威力は小さめ。”},
+{label:“政府には約780兆円の資産がある。負債だけ叫ぶのは片側の帳簿だ”,dmg:35,mp:3,crit:false,counter:“財務省「道路や河川は 売れません！\n 見合いの負債もあります！」”,counterDmg:6,note:“令和6年度末の国の資産は約783兆円。負債1483兆円とセットで見るのが複式簿記の作法。ただし固定資産は換金できず、年金預り金など見合い負債もあるため、敵の反撃にも一理ある。それでも「1400兆円だけ」を叫ぶ根拠は崩れる。”},
+{label:“連結消去！政府は日銀の55%株主。日銀保有の国債 約700兆円は相殺対象だ”,dmg:55,mp:4,crit:false,counter:“財務省「ぐぬぬ…だが 当座預金への\n 付利という債務は のこる…！」”,counterDmg:5,note:“親会社と子会社の債権債務の相殺消去は連結会計の義務。政府は日銀の出資証券の55%を保有する実質親会社で、日銀が保有する国債は約585〜700兆円規模。統合政府で見ればこの分の国債は相殺で消える。ただし日銀の貸方には民間銀行への当座預金が残り、金利上昇時は付利コスト（現在年2兆円規模）が発生する。「元本は幻、付利は本物」が正確な仕訳。”},
+{label:“財務省意見書を提出！「自国通貨建て国債のデフォルトは考えられない」”,dmg:99,mp:6,crit:true,counter:null,counterDmg:0,note:“格付け会社への意見書で財務省自身が「日・米など先進国の自国通貨建て国債のデフォルトは考えられない」と明記。国内向けの破綻論と矛盾する署名入りの自白であり、反論すれば自己否定になる。推計値ではなく相手の証憑による攻撃——これが反論不能のクリティカル。”},
+];
+const SET_WANI=[
+{label:“そのワニ、一般会計だけの絵だ。倍以上ある特別会計を含めた全体像を見せろ”,dmg:40,mp:3,crit:false,counter:“財務省「と、特別会計は\n 性質がちがうので…（目をそらす）」”,counterDmg:5,note:“ワニの口グラフは一般会計（約115兆円）だけを切り取った絵。国の財政全体には、その倍以上の規模の特別会計が存在する。一部だけを見せて全体の危機を語るのはプレゼンの作法として不誠実。ただし特別会計には年金や国債整理など機械的な繰入れも多く、全部が「隠し財布」ではない。”},
+{label:“税収は5年連続で過去最高。ワニの上あごは閉じ始めている事実を言え”,dmg:45,mp:3,crit:false,counter:“財務省「こ、高齢化で歳出も\n 増えつづけるのです…！」”,counterDmg:6,note:“インフレと名目成長で税収は毎年過去最高を更新中。「口は開く一方」という前提が古い。一方で社会保障費の自然増（年1兆円規模）が歳出側を押し上げ続けるのも事実なので、敵の反撃にも一理ある。両あごの動きをセットで見るのが正しい読み方。”},
+{label:“グラフは起点と縮尺の選び方で口の開き方が変わる。作図の恣意性を指摘する”,dmg:25,mp:0,crit:false,counter:“財務省「グラフの作り方は\n …一般的な手法です…」”,counterDmg:7,note:“どの年を起点に取るか、名目か実質か、対GDP比かで「口」の形は大きく変わる。印象に残る形を選ぶのは広報の技術。正しい指摘だが、それだけでは「で、財政は健全なのか」に答えていないため威力は控えめ。論証は相手の土俵の数字で行うほうが強い。”},
+{label:“対GDP比で見ろ。分母の経済が成長すれば借金の重さは薄まる”,dmg:50,mp:4,crit:false,counter:“財務省「せ、成長頼みは\n 不確実です…！」”,counterDmg:5,note:“借金の絶対額ではなく経済規模との比率で見るのが国際標準（ドーマー条件）。名目成長率が金利を上回る限り、債務比率は発散しない。戦後の英米も増税ではなく成長とインフレで債務比率を下げた。ただし成長が止まれば前提が崩れる点は敵の言う通り。”},
+];全部確認できました。では完全版のコードをそのまま出します。メッセージ上のコピーアイコン（重なった四角）でコピーして、GitHubの編集画面に貼り付けてください。
+
+<!DOCTYPE html><html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ZAIMU QUEST</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:#06060e;
+    color:#f5f5f0;
+    font-family:'DotGothic16','Hiragino Kaku Gothic ProN',monospace;
+    display:flex; justify-content:center;
+    min-height:100vh;
+    overflow-y:auto;
+  }
+  #game {
+    width:100%; max-width:430px;
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    padding:10px 10px 24px;
+    position:relative;
+  }
+  #scan {
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  }
+  .hidden { display:none !important; }
+  .win {
+    background:#06060e;
+    border:3px solid #f5f5f0;
+    border-radius:6px;
+    box-shadow:0 0 0 3px #06060e, 0 0 0 5px #f5f5f0;
+    padding:12px 14px;
+  }
+  #title {
+    flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
+    text-align:center; min-height:80vh;
+  }
+  #title h1 {
+    font-size:34px; letter-spacing:4px; line-height:1.4;
+    color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+  }
+  #title .sub { font-size:14px; color:#9aa0c0; letter-spacing:2px; }
+  #startBtn {
+    font-family:inherit; font-size:18px; letter-spacing:3px;
+    color:#f5f5f0; background:#06060e; border:3px solid #f5f5f0; border-radius:6px;
+    padding:14px 34px; cursor:pointer;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f5f5f0;
+    animation:blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity:.35; } }
+  #title .note { font-size:11px; color:#666c8f; line-height:1.9; }
+  #battle { flex:1; display:flex; flex-direction:column; gap:10px; }
+  #bossArea {
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:14px 0 6px;
+    background:radial-gradient(ellipse at 50% 80%, #1b1340 0%, #06060e 70%);
+    border-radius:8px;
+  }
+  #bossName { font-size:15px; letter-spacing:2px; color:#c4b5fd; }
+  #bossSprite { image-rendering:pixelated; position:relative; }
+  #bossSprite .px { position:absolute; width:1px; height:1px; }
+  .bossbar { width:200px; }
+  .hpRow { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .hpShell { flex:1; height:12px; border:2px solid #f5f5f0; border-radius:3px; background:#111; overflow:hidden; }
+  .hpFill { height:100%; transition:width .45s steps(8); }
+  #bossHpFill { background:linear-gradient(#f87171,#b91c1c); width:100%; }
+  #plHpFill { background:linear-gradient(#86efac,#15803d); width:100%; }
+  .hpNum { min-width:64px; text-align:right; font-size:12px; }
+  #playerBar { display:flex; flex-direction:column; gap:6px; padding:10px 12px; position:relative; }
+  #playerBar .who { font-size:13px; color:#fbbf24; letter-spacing:1px; margin-bottom:2px; }
+  #playerBar .statRow { display:flex; align-items:center; gap:8px; }
+  #playerBar .barLbl { font-size:12px; letter-spacing:1px; width:24px; }
+  #playerBar .hpShell { flex:1; }
+  #playerBar .hpNum { min-width:74px; font-size:12px; }
+  #plMpFill { background:linear-gradient(#7dd3fc,#2563eb); width:100%; }
+  #mpToast {
+    position:fixed; top:42%; left:50%; transform:translate(-50%,-50%) scale(0);
+    z-index:72; background:#06060e; border:3px solid #f87171; border-radius:6px;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f87171;
+    color:#fecaca; font-size:18px; letter-spacing:3px; padding:14px 26px; pointer-events:none;
+  }
+  .toastIn { animation:toast 1.1s ease-out forwards; }
+  @keyframes toast { 0%{transform:translate(-50%,-50%) scale(0)} 15%{transform:translate(-50%,-50%) scale(1.1)} 30%{transform:translate(-50%,-50%) scale(1)} 80%{transform:translate(-50%,-50%) scale(1); opacity:1} 100%{transform:translate(-50%,-50%) scale(1); opacity:0} }
+  .cmd .mpcost { color:#7dd3fc; font-size:12px; }
+  #msgWin { min-height:110px; font-size:15px; line-height:1.8; letter-spacing:1px; position:relative; cursor:pointer; user-select:none; }
+  #msgText { white-space:pre-wrap; }
+  #nextCursor {
+    position:absolute; right:12px; bottom:6px; font-size:14px; color:#ffd23f;
+    animation:blink 1s steps(2) infinite;
+  }
+  #noteWin {
+    border-color:#7dd3fc;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #7dd3fc;
+    font-size:13px; line-height:1.8; color:#dbeafe;
+  }
+  #noteWin .tag { color:#7dd3fc; font-size:12px; letter-spacing:2px; display:block; margin-bottom:4px; }
+  #cmds { display:flex; flex-direction:column; gap:8px; }
+  .cmdLabel { font-size:12px; color:#9aa0c0; letter-spacing:2px; padding-left:4px; }
+  .cmd {
+    font-family:inherit; text-align:left;
+    font-size:13.5px; line-height:1.55; letter-spacing:.5px;
+    color:#f5f5f0; background:#0c0c1c;
+    border:2px solid #f5f5f0; border-radius:5px;
+    padding:10px 12px 10px 30px; cursor:pointer; position:relative;
+  }
+  .cmd::before { content:"▶"; position:absolute; left:10px; color:#ffd23f; opacity:0; }
+  .cmd:active { background:#26264a; }
+  .cmd:active::before { opacity:1; }
+  .cmd:disabled { opacity:.45; }
+  @keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-7px,2px)} 40%{transform:translate(6px,-2px)} 60%{transform:translate(-5px,1px)} 80%{transform:translate(4px,-1px)} }
+  .shake { animation:shake .35s linear; }
+  @keyframes bossflash { 0%,100%{filter:none} 50%{filter:brightness(8) saturate(0)} }
+  .bossHit { animation:bossflash .18s linear 2; }
+  #flash { position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .flashWhite { background:#fff; animation:fl .25s linear; }
+  .flashGold  { background:#ffd23f; animation:fl .6s linear; }
+  @keyframes fl { 0%{opacity:.9} 100%{opacity:0} }
+  #critStamp {
+    position:fixed; top:32%; left:50%; z-index:70;
+    transform:translate(-50%,-50%) rotate(-8deg) scale(0);
+    font-size:42px; letter-spacing:6px; color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+    pointer-events:none;
+  }
+  .stampIn { animation:stamp .9s cubic-bezier(.2,2.4,.4,1) forwards; }
+  @keyframes stamp { 0%{transform:translate(-50%,-50%) rotate(-8deg) scale(0)} 60%{transform:translate(-50%,-50%) rotate(-8deg) scale(1.25)} 100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1)} }
+  .dmgPop {
+    position:absolute; z-index:40;
+    font-size:27px; color:#ffffff; font-weight:bold; letter-spacing:1px;
+    text-shadow:-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 0 #000;
+    pointer-events:none;
+    animation:pop 1.1s ease-out forwards;
+  }
+  .dmgPop.crit { color:#ffd23f; font-size:34px; }
+  @keyframes pop { 0%{opacity:0; transform:translateY(8px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-36px)} }
+  @media (prefers-reduced-motion: reduce){
+    .shake,.bossHit,.stampIn,.flashWhite,.flashGold,.dmgPop,#startBtn,#nextCursor { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="title">
+    <div>
+      <div class="sub">— 完全版 —</div>
+      <h1>ZAIMU<br>QUEST</h1>
+      <div class="sub" style="margin-top:10px">魔王・財務省を 論破せよ</div>
+    </div>
+    <button id="startBtn">▶ 戦闘開始</button>
+    <div class="note">※ボタンを押すとBGMが流れます<br>※強い反論はLP（ロジックポイント）を消費</div>
+  </div>
+  <div id="battle" class="hidden">
+    <div id="bossArea">
+      <div id="bossName">魔王 財務省（第一形態）</div>
+      <div id="bossSub" style="font-size:12px;color:#a78bfa;letter-spacing:1px;margin-top:-2px">— 1400兆円の幻影 —</div>
+      <div id="bossSprite"></div>
+      <div class="hpRow bossbar">
+        <div class="hpShell"><div id="bossHpFill" class="hpFill"></div></div>
+        <div class="hpNum" id="bossHpNum"></div>
+      </div>
+    </div>
+    <div id="playerBar" class="win">
+      <div class="who">納税者（勇者）</div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#fbbf24">HP</span>
+        <div class="hpShell"><div id="plHpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plHpNum"></span>
+      </div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#7dd3fc">LP</span>
+        <div class="hpShell"><div id="plMpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plMpNum"></span>
+      </div>
+    </div>
+    <div id="msgWin" class="win">
+      <div id="msgText"></div>
+      <div id="nextCursor" class="hidden">▼</div>
+    </div>
+    <div id="noteWin" class="win hidden">
+      <span class="tag">▼ かいせつ</span>
+      <div id="noteText"></div>
+    </div>
+    <div id="cmds" class="hidden">
+      <div class="cmdLabel" id="cmdLabel">▼ どう はんろんする？（すべて正解。威力がちがう）</div>
+      <div id="cmdBtns"></div>
+    </div>
+  </div>
+  <div id="scan"></div>
+  <div id="flash"></div>
+  <div id="critStamp">はんろんふのう！</div>
+  <div id="mpToast">LPが たりない！</div>
+</div>
+<script>
+"use strict";
+const PAL = { P:"#8b5cf6", D:"#5b21b6", B:"#1e1b4b", W:"#f5f5f0", K:"#000", R:"#ef4444", G:"#fbbf24" };
+const SPRITE = [
+"..R..........R..","..RP..........PR.","..PPPPPPPPPPPP..",".PPPPPPPPPPPPPP.",".PPKKWWPPWWKKPP.",".PPKGWWPPWWGKPP.",".PPPPPPPPPPPPPP.","..PPPKKKKKKPPP.","...PPPPPPPPPP...","..BBBBBWWBBBBB..",".BBBBBWRRWBBBBB.",".BBBBBWRRWBBBBB.",".BBBBBBRRBBBBBB.",".BBBBBBRRBBBBBB.",".BBB.BBBBBB.BBB.","................"];
+function drawBoss(scale){
+  const host=document.getElementById("bossSprite");
+  host.style.width=16*scale+"px"; host.style.height=16*scale+"px";
+  let shadows=[];
+  SPRITE.forEach((row,y)=>{[...row].forEach((c,x)=>{if(PAL[c])shadows.push(`${x*scale}px ${y*scale}px 0 ${scale/2}px ${PAL[c]}`);});});
+  const px=document.createElement("div"); px.className="px"; px.style.boxShadow=shadows.join(",");
+  host.appendChild(px);
+}
+drawBoss(7);
+
+let AC=null, bgmTimer=null, master=null;
+function audioInit(){
+AC=new (window.AudioContext||window.webkitAudioContext)();
+master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+}
+function beep(type,freq,t0,dur,vol){
+const o=AC.createOscillator(),g=AC.createGain();
+o.type=type; o.frequency.setValueAtTime(freq,t0);
+g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+.02);
+}
+const N={A2:110,C3:130.8,D3:146.8,E3:164.8,F3:174.6,G3:196,A3:220,C4:261.6,D4:293.7,E4:329.6,F4:349.2,G4:392,A4:440,B4:493.9,C5:523.3,D5:587.3,E5:659.3,F5:698.5,R:0};
+const LEAD=[“A4”,“R”,“C5”,“A4”,“E5”,“R”,“D5”,“C5”,“B4”,“R”,“D5”,“B4”,“E4”,“G4”,“A4”,“R”,“A4”,“R”,“C5”,“A4”,“F4”,“R”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”,“R”,“R”,“R”];
+const BASS=[“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“D3”,“D3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“C3”,“C3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”];
+function startBGM(){
+stopBGM(); const stepDur=.145; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=LEAD[step%LEAD.length],b=BASS[step%BASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.9,.045);if(N[b]&&step%2===0)beep(“triangle”,N[b],t,stepDur1.7,.07);step++;},stepDur1000);
+}
+const FLEAD=[“A4”,“A4”,“C5”,“E5”,“A4”,“A4”,“C5”,“F5”,“A4”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”];
+const FBASS=[“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“E3”,“E3”,“E3”,“E3”];
+function startBGMFinal(){
+stopBGM(); const stepDur=.115; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=FLEAD[step%FLEAD.length],b=FBASS[step%FBASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.85,.05);if(N[b])beep(“sawtooth”,N[b],t,stepDur1.3,.06);step++;},stepDur1000);
+}
+const SLEAD=[“A4”,“R”,“G4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“E4”,“F4”,“E4”,“R”,“R”,“R”,“C4”,“R”,“D4”,“R”,“E4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“C4”,“R”,“R”,“R”];
+const SBASS=[“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“D3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”,“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“C3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”];
+function startBGMSad(){
+stopBGM(); const stepDur=.34; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=SLEAD[step%SLEAD.length],b=SBASS[step%SBASS.length];if(N[l])beep(“triangle”,N[l],t,stepDur1.6,.06);if(N[b])beep(“sine”,N[b],t,stepDur2.2,.07);step++;},stepDur1000);
+}
+function stopBGM(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;}}
+const SFX={
+hit(){const t=AC.currentTime;beep(“square”,520,t,.07,.12);beep(“square”,260,t+.07,.1,.12);},
+weak(){const t=AC.currentTime;beep(“square”,330,t,.08,.1);},
+crit(){const t=AC.currentTime;[660,880,1175,1568].forEach((f,i)=>beep(“square”,f,t+i.07,.12,.13));beep(“sawtooth”,80,t,.4,.12);},
+hurt(){const t=AC.currentTime;beep(“sawtooth”,120,t,.18,.14);beep(“sawtooth”,90,t+.1,.2,.12);},
+select(){const t=AC.currentTime;beep(“square”,880,t,.05,.08);}
+};
+
+let plHP=200,plMax=200,plMP=20,plMpMax=20;
+let bossHP,bossMax,phaseIndex=0;
+
+const SET_SHAKKIN=[
+{label:”「一人あたり1100万円」はおかしい。国債の貸し手は国民側だ”,dmg:15,mp:0,crit:false,counter:“財務省「ですが 将来世代への\nツケであることに 変わりは…」”,counterDmg:8,note:“国債の債権者の大半は国内（日銀・銀行・保険）。「国民一人あたりの借金」という割り算は、債務者と債権者を混同した印象操作。ただし将来の利払い・償還が再分配の形で現役世代に影響する面は残るため、威力は小さめ。”},
+{label:“政府には約780兆円の資産がある。負債だけ叫ぶのは片側の帳簿だ”,dmg:35,mp:3,crit:false,counter:“財務省「道路や河川は 売れません！\n 見合いの負債もあります！」”,counterDmg:6,note:“令和6年度末の国の資産は約783兆円。負債1483兆円とセットで見るのが複式簿記の作法。ただし固定資産は換金できず、年金預り金など見合い負債もあるため、敵の反撃にも一理ある。それでも「1400兆円だけ」を叫ぶ根拠は崩れる。”},
+{label:“連結消去！政府は日銀の55%株主。日銀保有の国債 約700兆円は相殺対象だ”,dmg:55,mp:4,crit:false,counter:“財務省「ぐぬぬ…だが 当座預金への\n 付利という債務は のこる…！」”,counterDmg:5,note:“親会社と子会社の債権債務の相殺消去は連結会計の義務。政府は日銀の出資証券の55%を保有する実質親会社で、日銀が保有する国債は約585〜700兆円規模。統合政府で見ればこの分の国債は相殺で消える。ただし日銀の貸方には民間銀行への当座預金が残り、金利上昇時は付利コスト（現在年2兆円規模）が発生する。「元本は幻、付利は本物」が正確な仕訳。”},
+{label:“財務省意見書を提出！「自国通貨建て国債のデフォルトは考えられない」”,dmg:99,mp:6,crit:true,counter:null,counterDmg:0,note:“格付け会社への意見書で財務省自身が「日・米など先進国の自国通貨建て国債のデフォルトは考えられない」と明記。国内向けの破綻論と矛盾する署名入りの自白であり、反論すれば自己否定になる。推計値ではなく相手の証憑による攻撃——これが反論不能のクリティカル。”},
+];
+const SET_WANI=[
+{label:“そのワニ、一般会計だけの絵だ。倍以上ある特別会計を含めた全体像を見せろ”,dmg:40,mp:3,crit:false,counter:“財務省「と、特別会計は\n 性質がちがうので…（目をそらす）」”,counterDmg:5,note:“ワニの口グラフは一般会計（約115兆円）だけを切り取った絵。国の財政全体には、その倍以上の規模の特別会計が存在する。一部だけを見せて全体の危機を語るのはプレゼンの作法として不誠実。ただし特別会計には年金や国債整理など機械的な繰入れも多く、全部が「隠し財布」ではない。”},
+{label:“税収は5年連続で過去最高。ワニの上あごは閉じ始めている事実を言え”,dmg:45,mp:3,crit:false,counter:“財務省「こ、高齢化で歳出も\n 増えつづけるのです…！」”,counterDmg:6,note:“インフレと名目成長で税収は毎年過去最高を更新中。「口は開く一方」という前提が古い。一方で社会保障費の自然増（年1兆円規模）が歳出側を押し上げ続けるのも事実なので、敵の反撃にも一理ある。両あごの動きをセットで見るのが正しい読み方。”},
+{label:“グラフは起点と縮尺の選び方で口の開き方が変わる。作図の恣意性を指摘する”,dmg:25,mp:0,crit:false,counter:“財務省「グラフの作り方は\n …一般的な手法です…」”,counterDmg:7,note:“どの年を起点に取るか、名目か実質か、対GDP比かで「口」の形は大きく変わる。印象に残る形を選ぶのは広報の技術。正しい指摘だが、それだけでは「で、財政は健全なのか」に答えていないため威力は控えめ。論証は相手の土俵の数字で行うほうが強い。”},
+{label:“対GDP比で見ろ。分母の経済が成長すれば借金の重さは薄まる”,dmg:50,mp:4,crit:false,counter:“財務省「せ、成長頼みは\n 不確実です…！」”,counterDmg:5,note:“借金の絶対額ではなく経済規模との比率で見るのが国際標準（ドーマー条件）。名目成長率が金利を上回る限り、債務比率は発散しない。戦後の英米も増税ではなく成長とインフレで債務比率を下げた。ただし成長が止まれば前提が崩れる点は敵の言う通り。”},
+];
+const SET_TOKUBETSU=[
+{label:“純計で見ても規模は巨大。そもそも なぜ「特別な財布」が要るのか答えろ”,dmg:30,mp:0,crit:false,counter:“財務省「特定の事業には\n 区分経理が 必要なのです…！」”,counterDmg:6,note:“特別会計は重複を除いた純計でも一般会計に匹敵〜数倍の規模。「大きすぎる」への純計反論は財務省が正しい。だが本当の論点は規模ではなく『なぜ一般会計と分けた特別な財布が必要なのか』。区分経理の必然性がある会計（年金・国債整理など）もあるが、分けること自体が外部の監視を弱める入口になる。”},
+{label:“特別会計→独立行政法人→公益法人→関連企業。これは天下りの資金パイプだ”,dmg:55,mp:4,crit:false,counter:“財務省「随意契約は 専門性ゆえ。\n 適正な手続きです…！」”,counterDmg:5,note:“批判の本丸はここ。各府省庁が随意契約で独立行政法人を養い、それが系列の公益法人に業務を委託し、さらに関連企業へ発注する——という多段構造が、官僚OBの天下りポスト（理事長報酬は1千万円超とされる）を生む資金パイプになっていると長年指摘されてきた。区分経理という建前が、外から検証しにくい『官のサイフ』として機能する。財務省が最も触れられたくない論点。”},
+{label:“剰余金・積立金が外から見えにくい。これが「霞が関埋蔵金」と呼ばれた正体だ”,dmg:45,mp:3,crit:false,counter:“財務省「資料は 公表しております\n （膨大ですが）…！」”,counterDmg:6,note:“特別会計に積み上がった積立金（ストック）と剰余金（フロー）は、かつて『霞が関埋蔵金』と呼ばれ、改革で相当部分が取り崩された。資料はあるが量と複雑さで実質的に検証不能にする——情報の非対称性の典型で、『公表済み』は形式的な反論にすぎない。”},
+{label:“復興特別会計のように、増税で集めた金が目的外・天下り運営費に流れた例を挙げろ”,dmg:50,mp:4,crit:false,counter:“財務省「一部の 不適切な事例で\n 全体を 論じないでください…！」”,counterDmg:5,note:“震災復興のための増税分が、復興と無関係な事業や天下り法人の運営費に回っていたと国会・報道で問題化した。目的を限定したはずの特別会計でも、区分されているがゆえに資金の横流れが起きうる実例。構造的に起きやすいことの証左として効く。”},
+{label:“塩川元財務相の証言を引用！『母屋でおかゆ、離れ座敷ですき焼き』——特別会計は天下りを養う離れだ”,dmg:99,mp:6,crit:true,counter:null,counterDmg:0,note:“塩川正十郎・財務相（当時）が国会で放った名言。『母屋（一般会計）ではおかゆを食ってけちけち節約しているのに、離れ座敷（特別会計）では子がすき焼きを食っている』——特別会計の浪費体質を、当の財務トップ自身が認めた発言。第一形態の意見書と同じく『財務省側の人間の自白』なので、反論すれば自己否定になる。だからこそ反論不能のクリティカル。”},
+];
+const MAGIC=[
+{label:”【直接行動】財務省解体デモに参加！世論で包囲する”,dmg:30,mp:0,crit:false,magic:true,counter:“財務省「デモは 選挙ではありません。\n 我々の人事は 痛みません」”,counterDmg:10,note:“デモは注目度（サリエンス）を一時的に上げる効果はあるが、官僚は選挙で選ばれないため人事上の痛みを負わない。回収可能性は低いが、現地に参加して時間を使うより、財務省解体デモの動画を拡散して注目度だけ広げるほうがコスパはいい。怒りの表出は気持ちいいが、効くかどうかは別問題。”},
+];
+
+const PHASES=[
+{name:“魔王 財務省（第一形態）”,sub:“1400兆円の幻影”,hp:160,
+intro:“魔王・財務省が あらわれた！”,
+attacks:[
+{line:“財務省のこうげき！\n「国の借金は1400兆円！\n 国民一人あたり 1100万円です！」”,dmg:14,set:()=>SET_SHAKKIN},
+{line:“財務省のこうげき！\n「プライマリーバランスの\n 黒字化が きゅうむです！」”,dmg:12,set:()=>SET_SHAKKIN},
+{line:“財務省のこうげき！\n「歳出は増え 税収は伸びず——\n グラフが ワニの口のように\n 開いています！破綻します！」”,dmg:16,set:()=>SET_WANI},
+],
+defeat:“魔王・財務省 第一形態は\nくだけちった…！”,
+next:“奥から ただならぬ気配——\n最終形態「特別会計の迷宮」が\nたちはだかる！”},
+{name:“魔王 財務省（最終形態）”,sub:“特別会計の迷宮”,hp:240,
+intro:“ゆうしゃは さけんだ——\n「まず 特別会計を 公開しろ！」\n財務省「特別会計は 専門的すぎて\n 国民には 理解できません」\n最終決戦の はじまりだ！\n（ここから 直接行動も とれる）”,
+final:true,
+attacks:[
+{line:“財務省のこうげき！\n「特別会計は 専門的すぎて\n 国民には 理解できません」”,dmg:16,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「すべて 法律に基づく\n 適正な経理です」”,dmg:15,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「資料は 公表しております。\n 読まないほうが わるいのでは？」”,dmg:18,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「市場の信任が 失われます！」”,dmg:18,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「国債が 暴落しますよ？」”,dmg:20,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「格付けが 下がっても いいと？」”,dmg:19,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+]},
+];
+  全部確認できました。では完全版のコードをそのまま出します。メッセージ上のコピーアイコン（重なった四角）でコピーして、GitHubの編集画面に貼り付けてください。
+
+<!DOCTYPE html><html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ZAIMU QUEST</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:#06060e;
+    color:#f5f5f0;
+    font-family:'DotGothic16','Hiragino Kaku Gothic ProN',monospace;
+    display:flex; justify-content:center;
+    min-height:100vh;
+    overflow-y:auto;
+  }
+  #game {
+    width:100%; max-width:430px;
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    padding:10px 10px 24px;
+    position:relative;
+  }
+  #scan {
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  }
+  .hidden { display:none !important; }
+  .win {
+    background:#06060e;
+    border:3px solid #f5f5f0;
+    border-radius:6px;
+    box-shadow:0 0 0 3px #06060e, 0 0 0 5px #f5f5f0;
+    padding:12px 14px;
+  }
+  #title {
+    flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
+    text-align:center; min-height:80vh;
+  }
+  #title h1 {
+    font-size:34px; letter-spacing:4px; line-height:1.4;
+    color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+  }
+  #title .sub { font-size:14px; color:#9aa0c0; letter-spacing:2px; }
+  #startBtn {
+    font-family:inherit; font-size:18px; letter-spacing:3px;
+    color:#f5f5f0; background:#06060e; border:3px solid #f5f5f0; border-radius:6px;
+    padding:14px 34px; cursor:pointer;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f5f5f0;
+    animation:blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity:.35; } }
+  #title .note { font-size:11px; color:#666c8f; line-height:1.9; }
+  #battle { flex:1; display:flex; flex-direction:column; gap:10px; }
+  #bossArea {
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:14px 0 6px;
+    background:radial-gradient(ellipse at 50% 80%, #1b1340 0%, #06060e 70%);
+    border-radius:8px;
+  }
+  #bossName { font-size:15px; letter-spacing:2px; color:#c4b5fd; }
+  #bossSprite { image-rendering:pixelated; position:relative; }
+  #bossSprite .px { position:absolute; width:1px; height:1px; }
+  .bossbar { width:200px; }
+  .hpRow { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .hpShell { flex:1; height:12px; border:2px solid #f5f5f0; border-radius:3px; background:#111; overflow:hidden; }
+  .hpFill { height:100%; transition:width .45s steps(8); }
+  #bossHpFill { background:linear-gradient(#f87171,#b91c1c); width:100%; }
+  #plHpFill { background:linear-gradient(#86efac,#15803d); width:100%; }
+  .hpNum { min-width:64px; text-align:right; font-size:12px; }
+  #playerBar { display:flex; flex-direction:column; gap:6px; padding:10px 12px; position:relative; }
+  #playerBar .who { font-size:13px; color:#fbbf24; letter-spacing:1px; margin-bottom:2px; }
+  #playerBar .statRow { display:flex; align-items:center; gap:8px; }
+  #playerBar .barLbl { font-size:12px; letter-spacing:1px; width:24px; }
+  #playerBar .hpShell { flex:1; }
+  #playerBar .hpNum { min-width:74px; font-size:12px; }
+  #plMpFill { background:linear-gradient(#7dd3fc,#2563eb); width:100%; }
+  #mpToast {
+    position:fixed; top:42%; left:50%; transform:translate(-50%,-50%) scale(0);
+    z-index:72; background:#06060e; border:3px solid #f87171; border-radius:6px;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #f87171;
+    color:#fecaca; font-size:18px; letter-spacing:3px; padding:14px 26px; pointer-events:none;
+  }
+  .toastIn { animation:toast 1.1s ease-out forwards; }
+  @keyframes toast { 0%{transform:translate(-50%,-50%) scale(0)} 15%{transform:translate(-50%,-50%) scale(1.1)} 30%{transform:translate(-50%,-50%) scale(1)} 80%{transform:translate(-50%,-50%) scale(1); opacity:1} 100%{transform:translate(-50%,-50%) scale(1); opacity:0} }
+  .cmd .mpcost { color:#7dd3fc; font-size:12px; }
+  #msgWin { min-height:110px; font-size:15px; line-height:1.8; letter-spacing:1px; position:relative; cursor:pointer; user-select:none; }
+  #msgText { white-space:pre-wrap; }
+  #nextCursor {
+    position:absolute; right:12px; bottom:6px; font-size:14px; color:#ffd23f;
+    animation:blink 1s steps(2) infinite;
+  }
+  #noteWin {
+    border-color:#7dd3fc;
+    box-shadow:0 0 0 3px #06060e,0 0 0 5px #7dd3fc;
+    font-size:13px; line-height:1.8; color:#dbeafe;
+  }
+  #noteWin .tag { color:#7dd3fc; font-size:12px; letter-spacing:2px; display:block; margin-bottom:4px; }
+  #cmds { display:flex; flex-direction:column; gap:8px; }
+  .cmdLabel { font-size:12px; color:#9aa0c0; letter-spacing:2px; padding-left:4px; }
+  .cmd {
+    font-family:inherit; text-align:left;
+    font-size:13.5px; line-height:1.55; letter-spacing:.5px;
+    color:#f5f5f0; background:#0c0c1c;
+    border:2px solid #f5f5f0; border-radius:5px;
+    padding:10px 12px 10px 30px; cursor:pointer; position:relative;
+  }
+  .cmd::before { content:"▶"; position:absolute; left:10px; color:#ffd23f; opacity:0; }
+  .cmd:active { background:#26264a; }
+  .cmd:active::before { opacity:1; }
+  .cmd:disabled { opacity:.45; }
+  @keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-7px,2px)} 40%{transform:translate(6px,-2px)} 60%{transform:translate(-5px,1px)} 80%{transform:translate(4px,-1px)} }
+  .shake { animation:shake .35s linear; }
+  @keyframes bossflash { 0%,100%{filter:none} 50%{filter:brightness(8) saturate(0)} }
+  .bossHit { animation:bossflash .18s linear 2; }
+  #flash { position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .flashWhite { background:#fff; animation:fl .25s linear; }
+  .flashGold  { background:#ffd23f; animation:fl .6s linear; }
+  @keyframes fl { 0%{opacity:.9} 100%{opacity:0} }
+  #critStamp {
+    position:fixed; top:32%; left:50%; z-index:70;
+    transform:translate(-50%,-50%) rotate(-8deg) scale(0);
+    font-size:42px; letter-spacing:6px; color:#ffd23f;
+    text-shadow:3px 3px 0 #7c2d12, 6px 6px 0 #000;
+    pointer-events:none;
+  }
+  .stampIn { animation:stamp .9s cubic-bezier(.2,2.4,.4,1) forwards; }
+  @keyframes stamp { 0%{transform:translate(-50%,-50%) rotate(-8deg) scale(0)} 60%{transform:translate(-50%,-50%) rotate(-8deg) scale(1.25)} 100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1)} }
+  .dmgPop {
+    position:absolute; z-index:40;
+    font-size:27px; color:#ffffff; font-weight:bold; letter-spacing:1px;
+    text-shadow:-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 0 #000;
+    pointer-events:none;
+    animation:pop 1.1s ease-out forwards;
+  }
+  .dmgPop.crit { color:#ffd23f; font-size:34px; }
+  @keyframes pop { 0%{opacity:0; transform:translateY(8px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-36px)} }
+  @media (prefers-reduced-motion: reduce){
+    .shake,.bossHit,.stampIn,.flashWhite,.flashGold,.dmgPop,#startBtn,#nextCursor { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="title">
+    <div>
+      <div class="sub">— 完全版 —</div>
+      <h1>ZAIMU<br>QUEST</h1>
+      <div class="sub" style="margin-top:10px">魔王・財務省を 論破せよ</div>
+    </div>
+    <button id="startBtn">▶ 戦闘開始</button>
+    <div class="note">※ボタンを押すとBGMが流れます<br>※強い反論はLP（ロジックポイント）を消費</div>
+  </div>
+  <div id="battle" class="hidden">
+    <div id="bossArea">
+      <div id="bossName">魔王 財務省（第一形態）</div>
+      <div id="bossSub" style="font-size:12px;color:#a78bfa;letter-spacing:1px;margin-top:-2px">— 1400兆円の幻影 —</div>
+      <div id="bossSprite"></div>
+      <div class="hpRow bossbar">
+        <div class="hpShell"><div id="bossHpFill" class="hpFill"></div></div>
+        <div class="hpNum" id="bossHpNum"></div>
+      </div>
+    </div>
+    <div id="playerBar" class="win">
+      <div class="who">納税者（勇者）</div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#fbbf24">HP</span>
+        <div class="hpShell"><div id="plHpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plHpNum"></span>
+      </div>
+      <div class="statRow">
+        <span class="barLbl" style="color:#7dd3fc">LP</span>
+        <div class="hpShell"><div id="plMpFill" class="hpFill"></div></div>
+        <span class="hpNum" id="plMpNum"></span>
+      </div>
+    </div>
+    <div id="msgWin" class="win">
+      <div id="msgText"></div>
+      <div id="nextCursor" class="hidden">▼</div>
+    </div>
+    <div id="noteWin" class="win hidden">
+      <span class="tag">▼ かいせつ</span>
+      <div id="noteText"></div>
+    </div>
+    <div id="cmds" class="hidden">
+      <div class="cmdLabel" id="cmdLabel">▼ どう はんろんする？（すべて正解。威力がちがう）</div>
+      <div id="cmdBtns"></div>
+    </div>
+  </div>
+  <div id="scan"></div>
+  <div id="flash"></div>
+  <div id="critStamp">はんろんふのう！</div>
+  <div id="mpToast">LPが たりない！</div>
+</div>
+<script>
+"use strict";
+const PAL = { P:"#8b5cf6", D:"#5b21b6", B:"#1e1b4b", W:"#f5f5f0", K:"#000", R:"#ef4444", G:"#fbbf24" };
+const SPRITE = [
+"..R..........R..","..RP..........PR.","..PPPPPPPPPPPP..",".PPPPPPPPPPPPPP.",".PPKKWWPPWWKKPP.",".PPKGWWPPWWGKPP.",".PPPPPPPPPPPPPP.","..PPPKKKKKKPPP.","...PPPPPPPPPP...","..BBBBBWWBBBBB..",".BBBBBWRRWBBBBB.",".BBBBBWRRWBBBBB.",".BBBBBBRRBBBBBB.",".BBBBBBRRBBBBBB.",".BBB.BBBBBB.BBB.","................"];
+function drawBoss(scale){
+  const host=document.getElementById("bossSprite");
+  host.style.width=16*scale+"px"; host.style.height=16*scale+"px";
+  let shadows=[];
+  SPRITE.forEach((row,y)=>{[...row].forEach((c,x)=>{if(PAL[c])shadows.push(`${x*scale}px ${y*scale}px 0 ${scale/2}px ${PAL[c]}`);});});
+  const px=document.createElement("div"); px.className="px"; px.style.boxShadow=shadows.join(",");
+  host.appendChild(px);
+}
+drawBoss(7);
+
+let AC=null, bgmTimer=null, master=null;
+function audioInit(){
+AC=new (window.AudioContext||window.webkitAudioContext)();
+master=AC.createGain(); master.gain.value=.9; master.connect(AC.destination);
+}
+function beep(type,freq,t0,dur,vol){
+const o=AC.createOscillator(),g=AC.createGain();
+o.type=type; o.frequency.setValueAtTime(freq,t0);
+g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+.02);
+}
+const N={A2:110,C3:130.8,D3:146.8,E3:164.8,F3:174.6,G3:196,A3:220,C4:261.6,D4:293.7,E4:329.6,F4:349.2,G4:392,A4:440,B4:493.9,C5:523.3,D5:587.3,E5:659.3,F5:698.5,R:0};
+const LEAD=[“A4”,“R”,“C5”,“A4”,“E5”,“R”,“D5”,“C5”,“B4”,“R”,“D5”,“B4”,“E4”,“G4”,“A4”,“R”,“A4”,“R”,“C5”,“A4”,“F4”,“R”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”,“R”,“R”,“R”];
+const BASS=[“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“D3”,“D3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“C3”,“C3”,“D3”,“D3”,“E3”,“E3”,“E3”,“E3”];
+function startBGM(){
+stopBGM(); const stepDur=.145; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=LEAD[step%LEAD.length],b=BASS[step%BASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.9,.045);if(N[b]&&step%2===0)beep(“triangle”,N[b],t,stepDur1.7,.07);step++;},stepDur1000);
+}
+const FLEAD=[“A4”,“A4”,“C5”,“E5”,“A4”,“A4”,“C5”,“F5”,“A4”,“A4”,“C5”,“E5”,“D5”,“C5”,“B4”,“A4”];
+const FBASS=[“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“A2”,“F3”,“F3”,“F3”,“F3”,“E3”,“E3”,“E3”,“E3”];
+function startBGMFinal(){
+stopBGM(); const stepDur=.115; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=FLEAD[step%FLEAD.length],b=FBASS[step%FBASS.length];if(N[l])beep(“square”,N[l],t,stepDur*.85,.05);if(N[b])beep(“sawtooth”,N[b],t,stepDur1.3,.06);step++;},stepDur1000);
+}
+const SLEAD=[“A4”,“R”,“G4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“E4”,“F4”,“E4”,“R”,“R”,“R”,“C4”,“R”,“D4”,“R”,“E4”,“R”,“F4”,“R”,“E4”,“R”,“D4”,“R”,“C4”,“R”,“R”,“R”];
+const SBASS=[“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“D3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”,“A2”,“R”,“R”,“R”,“F3”,“R”,“R”,“R”,“C3”,“R”,“R”,“R”,“E3”,“R”,“R”,“R”];
+function startBGMSad(){
+stopBGM(); const stepDur=.34; let step=0;
+bgmTimer=setInterval(()=>{const t=AC.currentTime+.02;const l=SLEAD[step%SLEAD.length],b=SBASS[step%SBASS.length];if(N[l])beep(“triangle”,N[l],t,stepDur1.6,.06);if(N[b])beep(“sine”,N[b],t,stepDur2.2,.07);step++;},stepDur1000);
+}
+function stopBGM(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;}}
+const SFX={
+hit(){const t=AC.currentTime;beep(“square”,520,t,.07,.12);beep(“square”,260,t+.07,.1,.12);},
+weak(){const t=AC.currentTime;beep(“square”,330,t,.08,.1);},
+crit(){const t=AC.currentTime;[660,880,1175,1568].forEach((f,i)=>beep(“square”,f,t+i.07,.12,.13));beep(“sawtooth”,80,t,.4,.12);},
+hurt(){const t=AC.currentTime;beep(“sawtooth”,120,t,.18,.14);beep(“sawtooth”,90,t+.1,.2,.12);},
+select(){const t=AC.currentTime;beep(“square”,880,t,.05,.08);}
+};
+
+let plHP=200,plMax=200,plMP=20,plMpMax=20;
+let bossHP,bossMax,phaseIndex=0;
+
+const SET_SHAKKIN=[
+{label:”「一人あたり1100万円」はおかしい。国債の貸し手は国民側だ”,dmg:15,mp:0,crit:false,counter:“財務省「ですが 将来世代への\nツケであることに 変わりは…」”,counterDmg:8,note:“国債の債権者の大半は国内（日銀・銀行・保険）。「国民一人あたりの借金」という割り算は、債務者と債権者を混同した印象操作。ただし将来の利払い・償還が再分配の形で現役世代に影響する面は残るため、威力は小さめ。”},
+{label:“政府には約780兆円の資産がある。負債だけ叫ぶのは片側の帳簿だ”,dmg:35,mp:3,crit:false,counter:“財務省「道路や河川は 売れません！\n 見合いの負債もあります！」”,counterDmg:6,note:“令和6年度末の国の資産は約783兆円。負債1483兆円とセットで見るのが複式簿記の作法。ただし固定資産は換金できず、年金預り金など見合い負債もあるため、敵の反撃にも一理ある。それでも「1400兆円だけ」を叫ぶ根拠は崩れる。”},
+{label:“連結消去！政府は日銀の55%株主。日銀保有の国債 約700兆円は相殺対象だ”,dmg:55,mp:4,crit:false,counter:“財務省「ぐぬぬ…だが 当座預金への\n 付利という債務は のこる…！」”,counterDmg:5,note:“親会社と子会社の債権債務の相殺消去は連結会計の義務。政府は日銀の出資証券の55%を保有する実質親会社で、日銀が保有する国債は約585〜700兆円規模。統合政府で見ればこの分の国債は相殺で消える。ただし日銀の貸方には民間銀行への当座預金が残り、金利上昇時は付利コスト（現在年2兆円規模）が発生する。「元本は幻、付利は本物」が正確な仕訳。”},
+{label:“財務省意見書を提出！「自国通貨建て国債のデフォルトは考えられない」”,dmg:99,mp:6,crit:true,counter:null,counterDmg:0,note:“格付け会社への意見書で財務省自身が「日・米など先進国の自国通貨建て国債のデフォルトは考えられない」と明記。国内向けの破綻論と矛盾する署名入りの自白であり、反論すれば自己否定になる。推計値ではなく相手の証憑による攻撃——これが反論不能のクリティカル。”},
+];
+const SET_WANI=[
+{label:“そのワニ、一般会計だけの絵だ。倍以上ある特別会計を含めた全体像を見せろ”,dmg:40,mp:3,crit:false,counter:“財務省「と、特別会計は\n 性質がちがうので…（目をそらす）」”,counterDmg:5,note:“ワニの口グラフは一般会計（約115兆円）だけを切り取った絵。国の財政全体には、その倍以上の規模の特別会計が存在する。一部だけを見せて全体の危機を語るのはプレゼンの作法として不誠実。ただし特別会計には年金や国債整理など機械的な繰入れも多く、全部が「隠し財布」ではない。”},
+{label:“税収は5年連続で過去最高。ワニの上あごは閉じ始めている事実を言え”,dmg:45,mp:3,crit:false,counter:“財務省「こ、高齢化で歳出も\n 増えつづけるのです…！」”,counterDmg:6,note:“インフレと名目成長で税収は毎年過去最高を更新中。「口は開く一方」という前提が古い。一方で社会保障費の自然増（年1兆円規模）が歳出側を押し上げ続けるのも事実なので、敵の反撃にも一理ある。両あごの動きをセットで見るのが正しい読み方。”},
+{label:“グラフは起点と縮尺の選び方で口の開き方が変わる。作図の恣意性を指摘する”,dmg:25,mp:0,crit:false,counter:“財務省「グラフの作り方は\n …一般的な手法です…」”,counterDmg:7,note:“どの年を起点に取るか、名目か実質か、対GDP比かで「口」の形は大きく変わる。印象に残る形を選ぶのは広報の技術。正しい指摘だが、それだけでは「で、財政は健全なのか」に答えていないため威力は控えめ。論証は相手の土俵の数字で行うほうが強い。”},
+{label:“対GDP比で見ろ。分母の経済が成長すれば借金の重さは薄まる”,dmg:50,mp:4,crit:false,counter:“財務省「せ、成長頼みは\n 不確実です…！」”,counterDmg:5,note:“借金の絶対額ではなく経済規模との比率で見るのが国際標準（ドーマー条件）。名目成長率が金利を上回る限り、債務比率は発散しない。戦後の英米も増税ではなく成長とインフレで債務比率を下げた。ただし成長が止まれば前提が崩れる点は敵の言う通り。”},
+];
+const SET_TOKUBETSU=[
+{label:“純計で見ても規模は巨大。そもそも なぜ「特別な財布」が要るのか答えろ”,dmg:30,mp:0,crit:false,counter:“財務省「特定の事業には\n 区分経理が 必要なのです…！」”,counterDmg:6,note:“特別会計は重複を除いた純計でも一般会計に匹敵〜数倍の規模。「大きすぎる」への純計反論は財務省が正しい。だが本当の論点は規模ではなく『なぜ一般会計と分けた特別な財布が必要なのか』。区分経理の必然性がある会計（年金・国債整理など）もあるが、分けること自体が外部の監視を弱める入口になる。”},
+{label:“特別会計→独立行政法人→公益法人→関連企業。これは天下りの資金パイプだ”,dmg:55,mp:4,crit:false,counter:“財務省「随意契約は 専門性ゆえ。\n 適正な手続きです…！」”,counterDmg:5,note:“批判の本丸はここ。各府省庁が随意契約で独立行政法人を養い、それが系列の公益法人に業務を委託し、さらに関連企業へ発注する——という多段構造が、官僚OBの天下りポスト（理事長報酬は1千万円超とされる）を生む資金パイプになっていると長年指摘されてきた。区分経理という建前が、外から検証しにくい『官のサイフ』として機能する。財務省が最も触れられたくない論点。”},
+{label:“剰余金・積立金が外から見えにくい。これが「霞が関埋蔵金」と呼ばれた正体だ”,dmg:45,mp:3,crit:false,counter:“財務省「資料は 公表しております\n （膨大ですが）…！」”,counterDmg:6,note:“特別会計に積み上がった積立金（ストック）と剰余金（フロー）は、かつて『霞が関埋蔵金』と呼ばれ、改革で相当部分が取り崩された。資料はあるが量と複雑さで実質的に検証不能にする——情報の非対称性の典型で、『公表済み』は形式的な反論にすぎない。”},
+{label:“復興特別会計のように、増税で集めた金が目的外・天下り運営費に流れた例を挙げろ”,dmg:50,mp:4,crit:false,counter:“財務省「一部の 不適切な事例で\n 全体を 論じないでください…！」”,counterDmg:5,note:“震災復興のための増税分が、復興と無関係な事業や天下り法人の運営費に回っていたと国会・報道で問題化した。目的を限定したはずの特別会計でも、区分されているがゆえに資金の横流れが起きうる実例。構造的に起きやすいことの証左として効く。”},
+{label:“塩川元財務相の証言を引用！『母屋でおかゆ、離れ座敷ですき焼き』——特別会計は天下りを養う離れだ”,dmg:99,mp:6,crit:true,counter:null,counterDmg:0,note:“塩川正十郎・財務相（当時）が国会で放った名言。『母屋（一般会計）ではおかゆを食ってけちけち節約しているのに、離れ座敷（特別会計）では子がすき焼きを食っている』——特別会計の浪費体質を、当の財務トップ自身が認めた発言。第一形態の意見書と同じく『財務省側の人間の自白』なので、反論すれば自己否定になる。だからこそ反論不能のクリティカル。”},
+];
+const MAGIC=[
+{label:”【直接行動】財務省解体デモに参加！世論で包囲する”,dmg:30,mp:0,crit:false,magic:true,counter:“財務省「デモは 選挙ではありません。\n 我々の人事は 痛みません」”,counterDmg:10,note:“デモは注目度（サリエンス）を一時的に上げる効果はあるが、官僚は選挙で選ばれないため人事上の痛みを負わない。回収可能性は低いが、現地に参加して時間を使うより、財務省解体デモの動画を拡散して注目度だけ広げるほうがコスパはいい。怒りの表出は気持ちいいが、効くかどうかは別問題。”},
+];
+
+const PHASES=[
+{name:“魔王 財務省（第一形態）”,sub:“1400兆円の幻影”,hp:160,
+intro:“魔王・財務省が あらわれた！”,
+attacks:[
+{line:“財務省のこうげき！\n「国の借金は1400兆円！\n 国民一人あたり 1100万円です！」”,dmg:14,set:()=>SET_SHAKKIN},
+{line:“財務省のこうげき！\n「プライマリーバランスの\n 黒字化が きゅうむです！」”,dmg:12,set:()=>SET_SHAKKIN},
+{line:“財務省のこうげき！\n「歳出は増え 税収は伸びず——\n グラフが ワニの口のように\n 開いています！破綻します！」”,dmg:16,set:()=>SET_WANI},
+],
+defeat:“魔王・財務省 第一形態は\nくだけちった…！”,
+next:“奥から ただならぬ気配——\n最終形態「特別会計の迷宮」が\nたちはだかる！”},
+{name:“魔王 財務省（最終形態）”,sub:“特別会計の迷宮”,hp:240,
+intro:“ゆうしゃは さけんだ——\n「まず 特別会計を 公開しろ！」\n財務省「特別会計は 専門的すぎて\n 国民には 理解できません」\n最終決戦の はじまりだ！\n（ここから 直接行動も とれる）”,
+final:true,
+attacks:[
+{line:“財務省のこうげき！\n「特別会計は 専門的すぎて\n 国民には 理解できません」”,dmg:16,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「すべて 法律に基づく\n 適正な経理です」”,dmg:15,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「資料は 公表しております。\n 読まないほうが わるいのでは？」”,dmg:18,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「市場の信任が 失われます！」”,dmg:18,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「国債が 暴落しますよ？」”,dmg:20,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+{line:“財務省のこうげき！\n「格付けが 下がっても いいと？」”,dmg:19,set:()=>SET_TOKUBETSU.concat(MAGIC)},
+]},
+];
+
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function setHP(){
+$(“bossHpFill”).style.width=Math.max(0,bossHP/bossMax100)+”%”;
+$(“plHpFill”).style.width=Math.max(0,plHP/plMax100)+”%”;
+$(“bossHpNum”).textContent=${Math.max(0,bossHP)}/${bossMax};
+$(“plHpNum”).textContent=HP ${Math.max(0,plHP)}/${plMax};
+$(“plMpFill”).style.width=Math.max(0,plMP/plMpMax*100)+”%”;
+$(“plMpNum”).textContent=LP ${Math.max(0,plMP)}/${plMpMax};
+}
+
+let typing=false,skipReq=false,tapResolver=null;
+$(“msgWin”).addEventListener(“pointerdown”,()=>{
+if(typing){skipReq=true;}
+else if(tapResolver){const r=tapResolver;tapResolver=null;r();}
+});
+async function typeText(str){
+$(“nextCursor”).classList.add(“hidden”);
+typing=true;skipReq=false;
+const el=$(“msgText”);el.textContent=””;
+for(const ch of str){if(skipReq){el.textContent=str;break;}el.textContent+=ch;await sleep(24);}
+typing=false;
+$(“nextCursor”).classList.remove(“hidden”);
+if(AC)SFX.select();
+await new Promise(r=>{tapResolver=r;});
+$(“nextCursor”).classList.add(“hidden”);
+}
+
+function flash(cls){const f=$(“flash”);f.className=””;void f.offsetWidth;f.classList.add(cls);}
+function popDamage(target,text,isCrit){
+const host=target===“boss”?￼(“playerBar”);
+const d=document.createElement(“div”);
+d.className=“dmgPop”+(isCrit?” crit”:””);d.textContent=text;
+d.style.left=(38+Math.random()*26)+”%”;d.style.top=target===“boss”?“38%”:”-30px”;
+host.appendChild(d);setTimeout(()=>d.remove(),1250);
+}
+function buildCmds(set){
+const box=$(“cmdBtns”);box.innerHTML=””;
+set.forEach(c=>{
+const b=document.createElement(“button”);b.className=“cmd”;
+const tag=c.mp>0?　<span class="mpcost">［LP${c.mp}］</span>:””;
+b.innerHTML=c.label+tag;b.onclick=()=>playerTurn(c);box.appendChild(b);
+});
+box.style.display=“flex”;box.style.flexDirection=“column”;box.style.gap=“8px”;
+}
+function cmdsEnabled(on){
+$(“cmds”).classList.toggle(“hidden”,!on);
+document.querySelectorAll(”.cmd”).forEach(b=>b.disabled=!on);
+if(on)setTimeout(()=>$(“cmds”).scrollIntoView({behavior:“smooth”,block:“end”}),60);
+}
+function showNote(text){￼(“noteWin”).classList.remove(“hidden”);}
+function mpToast(){
+const t=$(“mpToast”);t.classList.remove(“toastIn”);void t.offsetWidth;t.classList.add(“toastIn”);
+if(AC){const n=AC.currentTime;beep(“square”,180,n,.12,.12);beep(“square”,140,n+.1,.14,.12);}
+}
+
+let busy=false,currentAttack=null;
+
+function startPhase(idx){
+phaseIndex=idx;const p=PHASES[idx];
+bossHP=p.hp;bossMax=p.hp;
+$(“bossName”).textContent=p.name;
+if(￼(“bossSub”).textContent=”— “+p.sub+” —”;
+setHP();
+}
+
+async function playerTurn(c){
+if(busy)return;
+if(plMP<c.mp){mpToast();return;}
+busy=true;SFX.select();
+if(c.mp>0){plMP-=c.mp;setHP();}
+cmdsEnabled(false);$(“noteWin”).classList.add(“hidden”);
+$(“msgWin”).scrollIntoView({behavior:“smooth”,block:“start”});
+const verb=c.magic?“ゆうしゃは 直接行動に でた！\n「”:“ゆうしゃの はんろん！\n「”;
+await typeText(verb+c.label+”」”);
+if(c.crit){
+flash(“flashGold”);SFX.crit();
+const st=$(“critStamp”);st.classList.remove(“stampIn”);void st.offsetWidth;st.classList.add(“stampIn”);
+￼(“game”).classList.add(“shake”);
+popDamage(“boss”,c.dmg+”!!”,true);await sleep(950);st.classList.remove(“stampIn”);
+}else{
+flash(“flashWhite”);(c.dmg>=45?SFX.hit:SFX.weak)();
+$(“bossSprite”).classList.add(“bossHit”);popDamage(“boss”,String(c.dmg),false);await sleep(450);
+}
+￼(“game”).classList.remove(“shake”);
+bossHP-=c.dmg;setHP();
+await typeText(c.crit?“クリティカル！ 財務省は こうべをたれて だまりこんだ…！\n反論の余地が ない！”:“財務省に “+c.dmg+” のダメージ！”);
+const pNow=PHASES[phaseIndex];
+if(pNow.final){
+if(bossHP<=0){await finalSequence();busy=false;return;}
+}else if(bossHP<=0){
+await typeText(pNow.defeat);
+if(pNow.next)await typeText(pNow.next);
+if(phaseIndex+1<PHASES.length){
+startPhase(phaseIndex+1);
+plMP=Math.min(plMpMax,plMP+15);setHP();
+await typeText(“形態を 突破した！\n論拠（LP）を 補給した！”);
+const np=PHASES[phaseIndex];
+if(np.final)startBGMFinal();
+await typeText(np.intro);await bossTurn();busy=false;return;
+}
+}
+if(c.counter){
+await typeText(c.counter+”\nゆうしゃに “+c.counterDmg+” のダメージ！”);
+plHP-=c.counterDmg;
+if(pNow.final&&plHP<1)plHP=1;
+setHP();SFX.hurt();$(“game”).classList.add(“shake”);popDamage(“player”,String(c.counterDmg),false);
+await sleep(400);$(“game”).classList.remove(“shake”);
+if(plHP<=0){await gameover();busy=false;return;}
+}
+showNote(c.note);await bossTurn();busy=false;
+}
+
+async function bossTurn(){
+if(plHP<=0){await gameover();return;}
+const ph=PHASES[phaseIndex];const atks=ph.attacks;
+currentAttack=atks[Math.floor(Math.random()*atks.length)];
+await typeText(currentAttack.line);
+plHP-=currentAttack.dmg;
+if(ph.final&&plHP<1)plHP=1;
+setHP();SFX.hurt();flash(“flashWhite”);$(“game”).classList.add(“shake”);
+popDamage(“player”,String(currentAttack.dmg),false);
+await sleep(420);
+  $(“game”).classList.remove(“shake”);
+await typeText(“ゆうしゃは “+currentAttack.dmg+” のダメージを うけた！\n（印象操作が 効いている…）”);
+if(plHP<=0){await gameover();return;}
+buildCmds(currentAttack.set());cmdsEnabled(true);
+}
+
+async function finalSequence(){
+await typeText(“財務省の HPが ゼロに——！\nやったか……！？”);
+await sleep(300);
+await typeText(”……だが 財務省は たおれない。\nニヤリと わらった——”);
+await typeText(“財務省は 呪文\n『市場の信任』を となえた！”);
+flash(“flashGold”);SFX.crit();
+let st=$(“critStamp”);st.textContent=“市場の信任”;st.classList.remove(“stampIn”);void st.offsetWidth;st.classList.add(“stampIn”);
+$(“bossSprite”).classList.add(“bossHit”);await sleep(800);st.classList.remove(“stampIn”);
+bossHP=bossMax;setHP();$(“bossSprite”).classList.remove(“bossHit”);
+await typeText(“財務省の HPが 全回復した！\n（正論では 倒せない……！）”);
+await typeText(“財務省は 本性を あらわした！\nテンプレ答弁の 猛攻——！”);
+const temps=[
+{t:“財務省「国債が 暴落します！」”,d:22},
+{t:“財務省「金利が 急騰します！」”,d:24},
+{t:“財務省「格付けが 下がります！」”,d:23},
+{t:“財務省「将来世代への 責任が！」”,d:25},
+{t:“財務省「これは 国際公約です！」”,d:26},
+];
+for(const x of temps){
+await typeText(x.t);plHP-=x.d;if(plHP<1)plHP=1;setHP();
+SFX.hurt();flash(“flashWhite”);$(“game”).classList.add(“shake”);
+popDamage(“player”,String(x.d),false);await sleep(320);$(“game”).classList.remove(“shake”);
+}
+await typeText(“ゆうしゃは ぼろぼろだ……！\nもう 立っているのが やっと——”);
+await typeText(“財務省は 切り札を 抜いた——！”);
+flash(“flashGold”);SFX.crit();
+st.textContent=“ひっさつ技”;st.classList.remove(“stampIn”);void st.offsetWidth;st.classList.add(“stampIn”);
+$(“game”).classList.add(“shake”);await sleep(700);st.classList.remove(“stampIn”);
+await typeText(“財務省「——ハイパーインフレが\n 起きますよ？」”);
+  popDamage(“player”,“9999”,true);flash(“flashWhite”);SFX.hurt();$(“game”).classList.add(“shake”);
+plHP=1;setHP();await sleep(900);$(“game”).classList.remove(“shake”);
+await typeText(“ゆうしゃに 9999の ダメージ！\nゆうしゃは ふらついた……！”);
+await typeText(“財務省は とどめの ひとことを\n放った——！”);
+flash(“flashGold”);SFX.crit();
+st.textContent=“ひっさつ技”;st.classList.remove(“stampIn”);void st.offsetWidth;st.classList.add(“stampIn”);
+$(“game”).classList.add(“shake”);await sleep(700);st.classList.remove(“stampIn”);
+await typeText(“財務省「——そもそも 我々は、\n 選挙で 選ばれていない」”);
+popDamage(“player”,“9999”,true);flash(“flashWhite”);SFX.hurt();$(“game”).classList.add(“shake”);
+plHP=0;setHP();await sleep(900);$(“game”).classList.remove(“shake”);
+await typeText(“ゆうしゃに 9999の ダメージ！\nゆうしゃは たおれた……！”);
+await loseEnding();
+}
+
+async function loseEnding(){
+startBGMSad();
+await typeText(“どんな正論で 殴っても\n官僚機構は たおれなかった。”);
+await typeText(“彼らは 選挙で 選ばれない。\nだから 選挙では 直接 倒せない。”);
+await typeText(“選択圧を かけられるのは\nただ一つ——\n選挙で 彼らと 戦う\n政治家を 選ぶことだけ。”);
+await typeText(“召喚した 政治家が\n裏切っても、\n次の選挙で また\n別の政治家を 召喚すればいい。”);
+ await typeText(“選択圧を かけられるのは\nただ一つ——\n選挙で 彼らと 戦う\n政治家を 選ぶことだけ。”);
+await typeText(“召喚した 政治家が\n裏切っても、\n次の選挙で また\n別の政治家を 召喚すればいい。”);
+await typeText(“勇者の 本当の武器は\n反論ではなく——\n一票だった。”);
+showNote(”【結末】どんな正論でも官僚機構そのものは倒せない。官僚は選挙で淘汰されないからだ。有権者が選択圧をかけられるのは、選挙で選ばれる政治家を通じてだけ。召喚獣（政治家）が期待を裏切っても、次の選挙でまた選び直すしかない。——だから、投票に行け。\n\nただし、政権交代を一度起こしただけでは緊張感は生まれない。交代が「いつでも起こりうる脅威」として存在し続けて初めて、政治家に規律が働く。大事なのは交代の回数そのものより、その脅威が本物であり続けることだ。”);
+const box=$(“cmdBtns”);box.innerHTML=””;
+const b=document.createElement(“button”);
+b.className=“cmd”;b.style.textAlign=“center”;b.style.paddingLeft=“12px”;
+b.textContent=“▶ もう一度 挑戦する（投票に行く）”;
+b.onclick=()=>location.reload();box.appendChild(b);$(“cmds”).classList.remove(“hidden”);
+}
+
+async function gameover(){
+stopBGM();
+await typeText(“ゆうしゃは ちからつきた…\n源泉徴収の しびれが とけない…”);
+showNote(“ゲームオーバー。だが本当の戦いは投票所にある。下のボタンで再挑戦できます。”);
+const box=$(“cmdBtns”);box.innerHTML=””;
+const b=document.createElement(“button”);
+b.className=“cmd”;b.style.textAlign=“center”;b.style.paddingLeft=“12px”;
+b.textContent=“▶ もう一度 挑戦する”;
+  b.onclick=()=>location.reload();box.appendChild(b);$(“cmds”).classList.remove(“hidden”);
+}
+
+$(“startBtn”).onclick=async()=>{
+audioInit();if(AC.state===“suspended”)await AC.resume();
+startBGM();￼(“battle”).classList.remove(“hidden”);
+startPhase(0);await typeText(PHASES[0].intro);await bossTurn();
+};
+</script>
+
+</body>
+</html>
