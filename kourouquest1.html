@@ -188,6 +188,5 @@ function loseEnding(){startBGMSad();return typeText(“どんな正論で 殴っ
 function gameover(){stopBGM();return typeText(“ゆうしゃは ちからつきた…\n保険料の 重さに つぶされた…”).then(function(){showNote(“ゲームオーバー。だが本当の戦いは投票所にある。下のボタンで再挑戦できます。”);var box=￼(“cmds”).classList.remove(“hidden”);});}
 ￼(“title”).classList.add(“hidden”);$(“battle”).classList.remove(“hidden”);startPhase(0);typeText(PHASES[0].intro).then(function(){return bossTurn();});};if(AC.state===“suspended”){AC.resume().then(go);}else{go();}};
 </script>
-
 </body>
 </html>
