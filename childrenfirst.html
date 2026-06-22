@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ブロック崩し
+  children First by Hiroyuki先生</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0d16;
+    --accent:#4cf1c4;
+    --accent2:#ff4d8d;
+    --gold:#ffd23f;
+    --text:#eef0ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Press Start 2P',monospace;overflow:hidden;height:100%;width:100%;display:flex;justify-content:center;align-items:center;touch-action:none;}
+  #gameWrap{position:relative;width:100%;max-width:420px;aspect-ratio:2/3;background:#000;border:3px solid var(--accent);box-shadow:0 0 20px rgba(76,241,196,.35), inset 0 0 12px rgba(0,0,0,.8);}
+  canvas{position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;}
+  .hud{position:absolute;top:6px;left:0;right:0;display:flex;justify-content:space-between;padding:0 10px;font-size:10px;color:var(--accent);text-shadow:0 0 4px rgba(76,241,196,.6);pointer-events:none;}
+  .overlay{position:absolute;inset:0;background:rgba(5,5,15,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;}
+  .hidden{display:none;}
+  h1{font-size:14px;color:var(--accent2);text-shadow:0 0 8px rgba(255,77,141,.7);letter-spacing:1px;margin:0;}
+  p{font-size:9px;line-height:1.8;margin:0;color:var(--text);opacity:.85;}
+  button{font-family:'Press Start 2P',monospace;font-size:10px;background:var(--accent);color:#0d0d16;border:none;padding:10px 18px;cursor:pointer;box-shadow:0 4px 0 #2a8f78;}
+  button:active{transform:translateY(2px);box-shadow:0 2px 0 #2a8f78;}
+  .footer-credit{position:absolute;bottom:4px;width:100%;text-align:center;font-size:7px;color:#555;letter-spacing:1px;}
+  #quoteBox{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.85);border:2px solid var(--gold);padding:10px 14px;font-size:8px;color:var(--gold);max-width:80%;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;z-index:5;}
+  #quoteBox.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="game"></canvas>
+  <div class="hud">
+    <span id="scoreLabel">SCORE 0</span>
+    <span id="stageLabel">STAGE 1</span>
+    <span id="bestLabel">BEST 0</span>
+  </div>
+  <div id="quoteBox"></div>
+
+  <div class="overlay" id="startScreen">
+    <h1>ブロック崩し（children First）</h1>
+    <p>指でなぞってパドルを動かそう<br>ボールを落とすな!<br>たまに出る金色ブロックは要注意</p>
+    <button id="startBtn">START</button>
+    <div class="footer-credit">by Hiroyuki先生</div>
+  </div>
+
+  <div class="overlay hidden" id="clearScreen">
+    <h1>STAGE CLEAR!</h1>
+    <p id="clearScoreText"></p>
+    <button id="nextBtn">NEXT STAGE</button>
+  </div>
+
+  <div class="overlay hidden" id="overScreen">
+    <h1>GAME OVER</h1>
+    <p id="overScoreText"></p>
+    <button id="retryBtn">RETRY</button>
+    <div class="footer-credit">by Hiroyuki先生</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const LW = 220, LH = 330;
+  canvas.width = LW; canvas.height = LH;
+
+  const scoreLabel = document.getElementById('scoreLabel');
+  const stageLabel = document.getElementById('stageLabel');
+  const bestLabel = document.getElementById('bestLabel');
+  const quoteBox = document.getElementById('quoteBox');
+  const startScreen = document.getElementById('startScreen');
+  const clearScreen = document.getElementById('clearScreen');
+  const overScreen = document.getElementById('overScreen');
+  const startBtn = document.getElementById('startBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const clearScoreText = document.getElementById('clearScoreText');
+  const overScoreText = document.getElementById('overScoreText');
+
+  let score = 0, best = 0, stage = 1;
+  let running = false;
+
+  let actx = null;
+  function ensureAudio(){ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); } }
+  function beep(freq, dur, type, vol, delay){
+    if(!actx) return;
+    type = type || 'square'; vol = vol || 0.06; delay = delay || 0;
+    const t0 = actx.currentTime + delay;
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(gain); gain.connect(actx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }
+  function sfxBrick(){ beep(660,0.06); }
+  function sfxPaddle(){ beep(220,0.05,'triangle'); }
+  function sfxGold(){ [880,1100,1320].forEach(function(f,i){ beep(f,0.09,'square',0.07,i*0.07); }); }
+  function sfxOver(){ [300,260,220,160].forEach(function(f,i){ beep(f,0.18,'sawtooth',0.08,i*0.14); }); }
+
+  const paddle = { w:46, h:8, x:(LW-46)/2, y:LH-22 };
+
+  let ball;
+  function resetBall(){
+    ball = { x:LW/2, y:paddle.y-10, vx:(Math.random()<0.5?-1:1)*1.6, vy:-1.8, size:5 };
+  }
+
+  const rowColors = ['#ff4d6d','#ff9b42','#ffd23f','#7be07a','#4cd6f1','#7a8cff'];
+  const rowScore  = [50,40,30,20,10,5];
+  let bricks = [];
+  function buildBricks(){
+    bricks = [];
+    const cols = 8;
+    const rows = Math.min(6, 4 + stage);
+    const gap = 3;
+    const bw = (LW - gap*(cols+1)) / cols;
+    const bh = 12;
+    const startY = 30;
+    const totalBricks = cols*rows;
+    const goldCount = Math.max(3, Math.round(totalBricks*0.15));
+    const goldIndices = new Set();
+    while(goldIndices.size < goldCount){
+      goldIndices.add(Math.floor(Math.random()*totalBricks));
+    }
+    let idx = 0;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const isGold = goldIndices.has(idx);
+        bricks.push({
+          x: gap + c*(bw+gap),
+          y: startY + r*(bh+gap),
+          w: bw, h: bh,
+          alive: true,
+          color: isGold ? '#ffd23f' : rowColors[r % rowColors.length],
+          score: isGold ? 100 : rowScore[r % rowScore.length],
+          gold: isGold
+        });
+        idx++;
+      }
+    }
+  }
+
+  const quotes = [
+    "ブロックより先に固定費を崩せ",
+    "そのボール、損益分岐点を超えたか?",
+    "右肩上がりは株価だけで十分",
+    "寄生獣も簿記は3級から始めた",
+    "自分で考えろ",
+    "資産と消費を間違えるな",
+    "複利を甘く見るな",
+    "R>Gを知らずに語るな",
+    "安いから買うのが一番高くつく",
+    "値段と価値は別の生き物だ",
+    "良い借金と悪い借金がある",
+    "損切りできない人が一番損する",
+    "今日の100円は明日より重い",
+    "リスクゼロという幻想を疑え",
+    "給料は労働の対価、資産は時間の対価",
+    "知らないものに投資するな",
+    "安心料という名の保険、入りすぎ注意",
+    "流動性のない資産は荷物だ"
+  ];
+  function showQuote(){
+    quoteBox.textContent = quotes[Math.floor(Math.random()*quotes.length)];
+    quoteBox.classList.add('show');
+    clearTimeout(showQuote._t);
+    showQuote._t = setTimeout(function(){ quoteBox.classList.remove('show'); }, 1600);
+  }
+
+  function setPaddleFromClientX(clientX){
+    const rect = canvas.getBoundingClientRect();
+    const rel = (clientX - rect.left) / rect.width;
+    paddle.x = Math.min(LW-paddle.w, Math.max(0, rel*LW - paddle.w/2));
+  }
+  canvas.addEventListener('touchstart', function(e){ setPaddleFromClientX(e.touches[0].clientX); }, {passive:true});
+  canvas.addEventListener('touchmove', function(e){ setPaddleFromClientX(e.touches[0].clientX); }, {passive:true});
+  let mouseDown=false;
+  canvas.addEventListener('mousedown', function(e){ mouseDown=true; setPaddleFromClientX(e.clientX); });
+  window.addEventListener('mouseup', function(){ mouseDown=false; });
+  canvas.addEventListener('mousemove', function(e){ if(mouseDown) setPaddleFromClientX(e.clientX); });
+
+  function updateHUD(){
+    scoreLabel.textContent = 'SCORE ' + score;
+    stageLabel.textContent = 'STAGE ' + stage;
+    bestLabel.textContent = 'BEST ' + best;
+  }
+
+  function loop(){
+    if(!running) return;
+
+    ball.x += ball.vx; ball.y += ball.vy;
+    if(ball.x < ball.size || ball.x > LW-ball.size) ball.vx *= -1;
+    if(ball.y < ball.size) ball.vy *= -1;
+
+    if(ball.y+ball.size >= paddle.y && ball.y < paddle.y+paddle.h &&
+       ball.x > paddle.x && ball.x < paddle.x+paddle.w && ball.vy>0){
+      ball.vy *= -1;
+      const hitPos = (ball.x - (paddle.x+paddle.w/2)) / (paddle.w/2);
+      ball.vx = hitPos*2.4;
+      sfxPaddle();
+    }
+
+    for(let i=0;i<bricks.length;i++){
+      const b = bricks[i];
+      if(!b.alive) continue;
+      if(ball.x > b.x && ball.x < b.x+b.w && ball.y > b.y && ball.y < b.y+b.h){
+        b.alive = false;
+        ball.vy *= -1;
+        score += b.score;
+        if(b.gold){ sfxGold(); showQuote(); } else { sfxBrick(); }
+        break;
+      }
+    }
+
+    if(ball.y > LH){
+      running = false;
+      sfxOver();
+      best = Math.max(best, score);
+      overScoreText.textContent = 'SCORE ' + score + '  /  BEST ' + best;
+      overScreen.classList.remove('hidden');
+      updateHUD();
+      return;
+    }
+
+    if(bricks.every(function(b){ return !b.alive; })){
+      running = false;
+      best = Math.max(best, score);
+      clearScoreText.textContent = 'SCORE ' + score;
+      clearScreen.classList.remove('hidden');
+      updateHUD();
+      return;
+    }
+
+    ctx.fillStyle = '#0d0d16';
+    ctx.fillRect(0,0,LW,LH);
+    for(let i=0;i<bricks.length;i++){
+      const b = bricks[i];
+      if(!b.alive) continue;
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x,b.y,b.w,b.h);
+      if(b.gold){
+        ctx.strokeStyle='#fff'; ctx.lineWidth=1;
+        ctx.strokeRect(b.x+0.5,b.y+0.5,b.w-1,b.h-1);
+      }
+    }
+    ctx.fillStyle = '#4cf1c4';
+    ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+    ctx.fillStyle = '#ff4d8d';
+    ctx.fillRect(ball.x-ball.size/2, ball.y-ball.size/2, ball.size, ball.size);
+
+    updateHUD();
+    requestAnimationFrame(loop);
+  }
+
+  function startStage(){
+    buildBricks();
+    paddle.x = (LW-paddle.w)/2;
+    resetBall();
+    ball.vx *= (1 + (stage-1)*0.08);
+    ball.vy *= (1 + (stage-1)*0.08);
+    running = true;
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', function(){
+    ensureAudio();
+    startScreen.classList.add('hidden');
+    score = 0; stage = 1;
+    startStage();
+  });
+  nextBtn.addEventListener('click', function(){
+    clearScreen.classList.add('hidden');
+    stage += 1;
+    startStage();
+  });
+  retryBtn.addEventListener('click', function(){
+    overScreen.classList.add('hidden');
+    score = 0; stage = 1;
+    startStage();
+  });
+
+  updateHUD();
+})();
+</script>
+</body>
+</html>
