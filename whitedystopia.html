@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>先進国滅亡実験 ホワイト・ディストピア by Hiroyuki先生</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body {
+    background:#0b0d14;
+    color:#e8e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+    overflow-x:hidden;
+    width:100%;
+    touch-action: manipulation;
+  }
+  #splash {
+    position:fixed; inset:0; background:#0b0d14;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:999; transition:opacity 0.6s;
+  }
+  #splash .badge {
+    font-size:13px; color:#5ad1d1; letter-spacing:2px; margin-bottom:14px;
+    border:1px solid #5ad1d1; padding:4px 12px; border-radius:20px;
+  }
+  #splash h1 {
+    font-size:26px; text-align:center; line-height:1.5; padding:0 24px;
+    background:linear-gradient(90deg,#5ad1d1,#a78bfa);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #splash .sub { margin-top:10px; color:#8a8aa0; font-size:13px; }
+  #splash .start-btn {
+    margin-top:36px; padding:14px 40px; border-radius:30px;
+    background:#5ad1d1; color:#0b0d14; font-weight:bold; font-size:16px;
+    border:none;
+  }
+  #main { display:none; min-height:100vh; padding-bottom:40px; }
+  header { padding:16px 18px 10px; border-bottom:1px solid #1d2030; }
+  header .title { font-size:14px; color:#5ad1d1; letter-spacing:1px; }
+  header .by { font-size:11px; color:#5a5a70; margin-top:2px; }
+  #year-bar {
+    text-align:center; padding:10px 16px 4px;
+    display:flex; align-items:baseline; justify-content:center; gap:6px;
+  }
+  #year-label { font-size:11px; color:#7a7a90; letter-spacing:2px; }
+  #year-value {
+    font-size:34px; font-weight:bold; letter-spacing:2px;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(90deg,#5ad1d1,#a78bfa);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #year-suffix { font-size:14px; color:#9a9ab0; }
+  #dashboard { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 16px; }
+  .stat-box { background:#13151f; border:1px solid #1d2030; border-radius:14px; padding:12px 14px; }
+  .stat-label { font-size:11px; color:#7a7a90; margin-bottom:4px; }
+  .stat-value { font-size:22px; font-weight:bold; }
+  .stat-value.pop { color:#5ad1d1; }
+  .stat-value.happy { color:#f0b94d; }
+  .stat-value.birth { color:#7be38a; }
+  .stat-value.age { color:#e87a9a; }
+  .bar-track { margin-top:6px; height:5px; background:#262838; border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+  #stage-wrap {
+    margin:14px 16px; border-radius:16px; overflow:hidden;
+    border:1px solid #1d2030; background:#0e1019; position:relative;
+  }
+  #stage { width:100%; height:240px; display:block; background:#0e1019; }
+  #control {
+    margin:18px 16px; background:#13151f; border:1px solid #1d2030;
+    border-radius:14px; padding:16px 16px 18px;
+  }
+  #control .ctl-label {
+    display:flex; justify-content:space-between; font-size:13px; color:#cfcfe0; margin-bottom:8px;
+  }
+  #control .ctl-label span.val { color:#5ad1d1; font-weight:bold; }
+  input[type=range] {
+    width:100%; height:6px; border-radius:3px; background:#262838;
+    -webkit-appearance:none; appearance:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+    background:#5ad1d1; border:3px solid #0b0d14; box-shadow:0 0 0 2px #5ad1d1;
+  }
+  #control .scale-row {
+    display:flex; justify-content:space-between; font-size:10px; color:#5a5a70; margin-top:6px;
+  }
+  #log-wrap {
+    margin:18px 16px 0; background:#13151f; border:1px solid #1d2030;
+    border-radius:14px; padding:11px 14px; min-height:20px;
+  }
+  #log-wrap .log-title { font-size:10px; color:#7a7a90; margin-bottom:4px; letter-spacing:1px; }
+  #log-list { font-size:13px; line-height:1.6; color:#cfcfe0; }
+  #log-list div { opacity:0; animation:fadein 0.5s forwards; }
+  #log-list div.shoulder { color:#f0c95d; }
+  @keyframes fadein { to { opacity:1; } }
+  #insight {
+    margin:0 16px 18px; padding:18px; border-radius:14px;
+    background:linear-gradient(135deg,#1d1430,#2a1a3a);
+    border:1px solid #4a2f6a; display:none; text-align:center;
+  }
+  #insight.show { display:block; animation:fadein 1.2s forwards; }
+  #insight .icon { font-size:28px; margin-bottom:8px; }
+  #insight p { font-size:13.5px; line-height:1.8; color:#d8c8f0; }
+  #insight .small { font-size:11px; color:#9a86b8; margin-top:10px; }
+  #egg {
+    margin:0 16px 30px; padding:14px; border-radius:14px;
+    background:#13151f; border:1px dashed #2a2d40; font-size:12px; color:#6a6a80;
+    text-align:center;
+  }
+  #egg b { color:#5ad1d1; }
+  #danger-frame {
+    position:fixed; inset:0; pointer-events:none; z-index:500;
+    border:0px solid rgba(232,60,60,0); transition:border-width 0.3s, border-color 0.3s;
+  }
+  #danger-frame.active {
+    border-width:8px; border-color:rgba(232,60,60,0.55);
+    animation:dangerPulse 0.9s infinite;
+  }
+  @keyframes dangerPulse {
+    0%,100% { border-color:rgba(232,60,60,0.25); }
+    50% { border-color:rgba(232,60,60,0.7); }
+  }
+  body.shake { animation:shakeAnim 0.4s infinite; }
+  @keyframes shakeAnim {
+    0%,100% { transform:translate(0,0); }
+    25% { transform:translate(-2px,1px); }
+    50% { transform:translate(2px,-1px); }
+    75% { transform:translate(-1px,-2px); }
+  }
+  #god-reminder {
+    position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-60px);
+    background:rgba(13,15,22,0.95); border:1px solid #5ad1d1; border-radius:30px;
+    padding:9px 18px; font-size:12.5px; color:#bdf0f0; z-index:600;
+    transition:transform 0.5s; max-width:88%; text-align:center; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  #god-reminder.show { transform:translateX(-50%) translateY(0); }
+  #mute-btn {
+    position:fixed; top:14px; right:14px; z-index:600;
+    width:38px; height:38px; border-radius:50%;
+    background:#13151f; border:1px solid #2a2d40; color:#cfcfe0; font-size:15px;
+  }
+  .human-label {
+    position:absolute; font-size:9px; color:rgba(232,232,240,0.55); pointer-events:none;
+    transform:translate(-50%,-150%); white-space:nowrap;
+  }
+  #extinction {
+    position:fixed; inset:0; background:#000; z-index:900;
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    text-align:center; padding:30px;
+  }
+  #extinction.show { display:flex; animation:fadein 2.5s forwards; }
+  #extinction h2 { font-size:18px; color:#e87a9a; margin-bottom:18px; letter-spacing:1px; }
+  #extinction p { font-size:13.5px; color:#9a9ab0; line-height:2; max-width:320px; }
+  #extinction-punchline {
+    margin-top:24px; font-size:15px !important; color:#c0c0c8 !important;
+    font-weight:bold; letter-spacing:1px; opacity:0; min-height:24px;
+  }
+  #extinction-punchline.reveal { animation:fadein 2s 2.5s forwards; }
+  #extinction button {
+    margin-top:30px; padding:12px 30px; border-radius:30px; background:#1d2030;
+    color:#cfcfe0; border:1px solid #2a2d40; font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<div id="danger-frame"></div>
+<div id="god-reminder"></div>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
+
+<div id="extinction">
+  <h2>EXTINCTION</h2>
+  <p id="extinction-text"></p>
+  <p id="extinction-punchline"></p>
+  <button id="extinction-btn" onclick="resetGame(); document.getElementById('extinction').classList.remove('show');">もう一度、神になる</button>
+</div>
+
+<div id="splash">
+  <div class="badge">🇯🇵 SIMULATION</div>
+  <h1>先進国滅亡実験<br>『ホワイト・ディストピア』</h1>
+  <div class="sub">by Hiroyuki先生</div>
+  <div style="margin-top:18px;font-size:12px;color:#7a7a90;text-align:center;padding:0 30px;line-height:1.8;">
+    あなたは今日、神になる。<br>
+    1億2000万人の運命を、<br>
+    「余暇とゆとり」の量で操る。
+  </div>
+  <button class="start-btn" onclick="startGame()">実験を開始する</button>
+</div>
+
+<div id="main">
+  <header>
+    <div class="title">🇯🇵 先進国滅亡実験『ホワイト・ディストピア』</div>
+    <div class="by">by Hiroyuki先生</div>
+  </header>
+
+  <div id="year-bar">
+    <span id="year-label">西暦</span>
+    <span id="year-value">2026</span>
+    <span id="year-suffix">年</span>
+  </div>
+
+  <div id="dashboard">
+    <div class="stat-box">
+      <div class="stat-label">総人口</div>
+      <div class="stat-value pop" id="val-pop">1億2000万人</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-pop" style="background:#5ad1d1;width:50%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">幸福度（脳内物質平均）</div>
+      <div class="stat-value happy" id="val-happy">50</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-happy" style="background:#f0b94d;width:50%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">出生率（合計特殊出生率）</div>
+      <div class="stat-value birth" id="val-birth" style="color:#f0b94d;">1.20</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-birth" style="background:#7be38a;width:50%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">引きこもり化率</div>
+      <div class="stat-value age" id="val-age">0%</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-age" style="background:#e87a9a;width:0%"></div></div>
+    </div>
+    <div class="stat-box" id="soul-box" style="display:none;grid-column:1/3;">
+      <div class="stat-label">心の死亡率</div>
+      <div class="stat-value" id="val-soul" style="color:#c84b6b;">0%</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-soul" style="background:#c84b6b;width:0%"></div></div>
+    </div>
+  </div>
+
+  <div id="stage-wrap">
+    <canvas id="stage"></canvas>
+  </div>
+
+  <div id="control">
+    <div class="ctl-label"><span>余暇・ゆとり</span><span class="val" id="slider-val">50</span></div>
+    <input type="range" id="resource-slider" min="0" max="100" value="50">
+    <div class="scale-row"><span>少ない（24時間労働）</span><span>多い（豊かで安全）</span></div>
+  </div>
+
+  <div id="log-wrap">
+    <div class="log-title">観察ログ</div>
+    <div id="log-list"></div>
+  </div>
+
+  <div id="insight">
+    <div class="icon">💭</div>
+    <p id="insight-text"></p>
+    <div class="small">— これはネズミの楽園実験を眺めるシミュレーションです —</div>
+  </div>
+
+  <div id="egg" onclick="showEgg()">
+    <span id="egg-text">タップして本日の格言</span>
+  </div>
+</div>
+
+<script>
+let audioCtx = null;
+let droneOsc1, droneOsc2, droneGain;
+let muted = false;
+
+function initAudio(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.05;
+  droneGain.connect(audioCtx.destination);
+  droneOsc1 = audioCtx.createOscillator();
+  droneOsc1.type = 'sine';
+  droneOsc1.frequency.value = 55;
+  droneOsc1.connect(droneGain);
+  droneOsc1.start();
+  droneOsc2 = audioCtx.createOscillator();
+  droneOsc2.type = 'sine';
+  droneOsc2.frequency.value = 55.6;
+  droneOsc2.connect(droneGain);
+  droneOsc2.start();
+}
+
+function setDroneIntensity(level){
+  if (!audioCtx || muted) return;
+  const detune = 0.4 + level*6;
+  droneOsc2.frequency.value = 55 + detune;
+  droneGain.gain.value = 0.04 + level*0.05;
+}
+
+function playBeep(freq=880, duration=0.12, vol=0.08){
+  if (!audioCtx || muted) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  gain.gain.value = vol;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.stop(audioCtx.currentTime + duration + 0.02);
+}
+
+function playExtinctionTone(){
+  if (!audioCtx || muted) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = 220;
+  gain.gain.value = 0.0001;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 1.5);
+  osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 4);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 5);
+  osc.stop(audioCtx.currentTime + 5.2);
+}
+
+function toggleMute(){
+  muted = !muted;
+  document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+  if (droneGain) droneGain.gain.value = muted ? 0 : 0.05;
+}
+
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  W = canvas.width = rect.width * devicePixelRatio;
+  H = canvas.height = 240 * devicePixelRatio;
+  canvas.style.height = '240px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+let mice = [];
+let resource = 50;
+let population = 220;
+let realPopulation = 120_000_000;
+let happiness = 50;
+let birthRate = 1.2;
+let withdrawRate = 0;
+let tick = 0;
+let insightShown = false;
+let running = false;
+let extinct = false;
+let lastBeepPop = null;
+let reminderTimer = 0;
+let dangerStage = 0;
+let soulDeathRate = 0;
+let soulBoxRevealed = false;
+let soulGameOver = false;
+let currentYear = 2026;
+let yearAccumulator = 0;
+
+const godReminders = [
+  "あなたは今、1億2000万人の運命を操っている",
+  "出生率2.1を割ると、人口はゆっくり減り始める",
+  "争いも安心も、すべてあなたが選んでいる",
+  "彼らはこの世界が「実験」だと知らない",
+  "余暇とゆとりの量を決めているのは、神であるあなただけ",
+];
+
+// 資源を「増やした」時のログ（令和・引きこもり化）
+const logMessagesHigh = [
+  "恋愛をコスパが悪いと判断し拒否",
+  "SNS的ランクを気にして引きこもり開始",
+  "争うのをやめ、毛並みを整え始めた",
+  "争うことに疲れ、隅で静かに過ごす",
+  "繁殖行動より安全を優先する個体が増加",
+  "資源は十分なのに、誰も動かなくなった",
+  "「闘わなくていい」という選択がストレスになっている",
+  "群れの中心から離れ、孤立する個体が増加",
+];
+
+// 資源を「絞った」時のログ（昭和・体育会系・終身雇用ノスタルジー）
+const logMessagesLow = [
+  "「24時間、戦えますか」と歌い出した",
+  "「会社は家族だ」と言い、家に帰らなくなった",
+  "終身雇用を誉とし、転職した個体を裏切り者と呼んだ",
+  "「根性があれば資源は要らない」と叫んでいる",
+  "「みんなで頑張れば、いつか報われる」と信じ続けている",
+  "休むことを「怠け」と判断し、働き続けて倒れた",
+  "「俺たちの時代はもっと厳しかった」と若い個体に説いている",
+  "団結こそが正義だと信じ、声を揃えて連帯を誓った",
+  "「気合と根性で資源不足は乗り越えられる」と上司面で語る",
+  "「残業は美徳」という旗を勝手に立てて掲げた",
+  "新人個体に「飲み会は仕事の一部だ」と説教している",
+  "「察してくれる部下が一番」と言い、指示を出さなくなった",
+  "有給を取ろうとした個体を「権利の主張は甘え」と叱責した",
+  "「我慢こそが資源だ」という謎の格言を生み出した",
+  "倒れた個体を見て「まだ甘い、もっと根性を見せろ」と言った",
+  "「昔は地獄だったがそれでも楽しかった」と過去を美化している",
+  "育休を取った個体に「会社への忠誠心が足りない」と陰口を叩いた",
+  "「皆で苦しめば、それは連帯感だ」と苦しさを賛美している",
+  "「努力すれば資源なんて要らない」という根拠のない自己啓発を始めた",
+  "定時で帰る個体を「やる気がない」と評価で減点した",
+];
+
+function rand(min, max){ return Math.random()*(max-min)+min; }
+
+function formatPopulation(n){
+  const oku = Math.floor(n / 100_000_000);
+  const man = Math.floor((n % 100_000_000) / 10_000);
+  if (oku > 0) return `${oku}億${man.toLocaleString()}万人`;
+  return `${man.toLocaleString()}万人`;
+}
+
+function initMice(n){
+  mice = [];
+  for(let i=0;i<n;i++){
+    mice.push({
+      x: rand(20, 280),
+      y: rand(20, 200),
+      vx: rand(-0.4,0.4),
+      vy: rand(-0.4,0.4),
+      withdrawn: false,
+      hasLabel: i < 4
+    });
+  }
+}
+
+function updateSimulation(){
+  tick++;
+
+  yearAccumulator++;
+  if (yearAccumulator >= 120){
+    yearAccumulator = 0;
+    currentYear++;
+    document.getElementById('year-value').textContent = currentYear;
+  }
+
+  const r = resource / 100;
+
+  let targetBirth;
+  if (r <= 0.5) {
+    targetBirth = 1.8 - r*1.2;
+  } else {
+    targetBirth = 1.2 - (r-0.5)*1.4;
+  }
+  birthRate += (targetBirth - birthRate) * 0.015;
+  birthRate = Math.max(0.3, Math.min(2.6, birthRate));
+
+  const targetWithdraw = Math.max(0, (r-0.45) * 130);
+  withdrawRate += (targetWithdraw - withdrawRate) * 0.04;
+  withdrawRate = Math.min(95, Math.max(0, withdrawRate));
+
+  const baseHappy = 20 + r*72;
+  const happyPenalty = withdrawRate * 0.18;
+  happiness += ((baseHappy - happyPenalty) - happiness) * 0.03;
+  happiness = Math.min(100, Math.max(0, happiness));
+
+  const REPLACEMENT = 1.8;
+  const growthRatio = (birthRate - REPLACEMENT) * 0.00018;
+  realPopulation *= (1 + growthRatio);
+  realPopulation = Math.max(500000, Math.min(200_000_000, realPopulation));
+
+  const popRatio = realPopulation / 120_000_000;
+  population = Math.max(3, Math.min(100, Math.round(popRatio * 70)));
+
+  if (birthRate < 0.8 || realPopulation < 60_000_000) dangerStage = 3;
+  else if (birthRate < 1.0 || realPopulation < 80_000_000) dangerStage = 2;
+  else if (birthRate < 1.5 || realPopulation < 100_000_000) dangerStage = 1;
+  else dangerStage = 0;
+
+  if (resource < 35){
+    soulDeathRate += 0.15;
+  } else if (resource > 50){
+    soulDeathRate -= 0.3;
+  }
+  soulDeathRate = Math.max(0, Math.min(100, soulDeathRate));
+
+  if (soulDeathRate > 8 && !soulBoxRevealed){
+    soulBoxRevealed = true;
+    document.getElementById('soul-box').style.display = 'block';
+    showGodReminder('効率を追い求めるほど、心は静かにすり減っていく——');
+  }
+  if (soulBoxRevealed){
+    document.getElementById('val-soul').textContent = Math.round(soulDeathRate)+'%';
+    document.getElementById('bar-soul').style.width = soulDeathRate+'%';
+  }
+
+  const targetCount = population;
+  while(mice.length < targetCount && mice.length < 100) mice.push({
+    x: rand(20,280), y: rand(20,200), vx:rand(-0.4,0.4), vy:rand(-0.4,0.4), withdrawn:false, hasLabel:false
+  });
+  while(mice.length > targetCount && mice.length > 3) mice.pop();
+
+  const withdrawProb = withdrawRate/100;
+  mice.forEach(m=>{
+    if (Math.random() < withdrawProb*0.01) m.withdrawn = true;
+    if (Math.random() < 0.002 && r < 0.4) m.withdrawn = false;
+
+    if (m.withdrawn){
+      const corner = {x: 270, y: 210};
+      m.x += (corner.x - m.x)*0.01 + rand(-0.1,0.1);
+      m.y += (corner.y - m.y)*0.01 + rand(-0.1,0.1);
+    } else {
+      m.x += m.vx; m.y += m.vy;
+      if (m.x < 10 || m.x > 290) m.vx *= -1;
+      if (m.y < 10 || m.y > 220) m.vy *= -1;
+      if (Math.random()<0.02) { m.vx = rand(-0.6,0.6); m.vy = rand(-0.6,0.6); }
+    }
+  });
+
+  document.getElementById('val-pop').textContent = formatPopulation(realPopulation);
+  document.getElementById('val-happy').textContent = Math.round(happiness);
+  document.getElementById('val-birth').textContent = birthRate.toFixed(2);
+  document.getElementById('val-age').textContent = Math.round(withdrawRate)+'%';
+  document.getElementById('bar-pop').style.width = Math.min(100, popRatio*100)+'%';
+  document.getElementById('bar-happy').style.width = happiness+'%';
+  document.getElementById('bar-birth').style.width = Math.min(100,(birthRate/2.6)*100)+'%';
+  document.getElementById('bar-age').style.width = withdrawRate+'%';
+
+  const birthEl = document.getElementById('val-birth');
+  if (dangerStage >= 2) birthEl.style.color = '#e85c5c';
+  else if (dangerStage >= 1) birthEl.style.color = '#f0b94d';
+  else birthEl.style.color = '#7be38a';
+
+  if (!insightShown && withdrawRate > 55 && tick > 80){
+    insightShown = true;
+    showInsight();
+  }
+  if (insightShown && withdrawRate < 30){
+    insightShown = false;
+    document.getElementById('insight').classList.remove('show');
+  }
+
+  const dangerFrame = document.getElementById('danger-frame');
+  if (dangerStage >= 2 && realPopulation > 1_000_000){
+    dangerFrame.classList.add('active');
+    document.body.classList.add('shake');
+    if (lastBeepPop === null || Math.floor(realPopulation/2_000_000) !== Math.floor(lastBeepPop/2_000_000)){
+      playBeep(520, 0.15, 0.06);
+      lastBeepPop = realPopulation;
+    }
+  } else {
+    dangerFrame.classList.remove('active');
+    document.body.classList.remove('shake');
+  }
+
+  const birthDanger = Math.max(0, (1.5 - birthRate) / 1.5);
+  const popDanger = Math.max(0, (100_000_000 - realPopulation) / 100_000_000);
+  const dangerLevel = Math.max(birthDanger*0.7, popDanger*0.7, withdrawRate/100 * 0.6);
+  setDroneIntensity(dangerLevel);
+
+  reminderTimer++;
+  if (reminderTimer > 260){
+    reminderTimer = 0;
+    showGodReminder();
+  }
+
+  if (realPopulation <= 1_000_000 && !extinct){
+    triggerExtinction();
+  }
+
+  if (soulDeathRate >= 80 && !soulGameOver && !extinct){
+    soulGameOver = true;
+    triggerExtinction('soul');
+  }
+}
+
+function showGodReminder(customMsg){
+  const el = document.getElementById('god-reminder');
+  el.textContent = customMsg || godReminders[Math.floor(Math.random()*godReminders.length)];
+  el.classList.add('show');
+  setTimeout(()=>{ el.classList.remove('show'); }, 3800);
+}
+
+function triggerExtinction(cause){
+  extinct = true;
+  running = false;
+  document.body.classList.remove('shake');
+  document.getElementById('danger-frame').classList.remove('active');
+  playExtinctionTone();
+  setTimeout(()=>{
+    let msg;
+    const punchEl = document.getElementById('extinction-punchline');
+    punchEl.classList.remove('reveal');
+    punchEl.textContent = '';
+    if (cause === 'soul'){
+      document.querySelector('#extinction h2').textContent = 'GAME OVER';
+      msg = "誰もが効率を求め、休むことを忘れて走り続けた。" +
+            "24時間、戦い続けることが美徳とされた。" +
+            "経済は回り、数字の上では国は豊かだった。" +
+            "それでも、すり減った心が静かに増えていき、人は内側から倒れていった。";
+      punchEl.textContent = "あなたは神などではなく、ただの灰色の男だった。";
+      void punchEl.offsetWidth;
+      punchEl.classList.add('reveal');
+    } else {
+      document.querySelector('#extinction h2').textContent = 'EXTINCTION';
+      msg = "誰も争わず、誰も飢えなかった。" +
+            "出生率は1を割り、それでも誰も気づかないふりをした。" +
+            "そして、誰も生まれなかった。" +
+            "人類は静かに、誰のせいでもなく終わった。" +
+            "あなたが見ていたのは、安心の果てにある終わり方だった。";
+    }
+    document.getElementById('extinction-text').textContent = msg;
+    document.getElementById('extinction').classList.add('show');
+  }, 1200);
+}
+
+function showInsight(){
+  const box = document.getElementById('insight');
+  document.getElementById('insight-text').textContent =
+    "余暇とゆとりを与えすぎた結果、個体は争わなくなり、傷つかなくなった。" +
+    "その代わりに、生きる目的そのものが希薄になっていく——" +
+    "これは、安心と豊かさを追い求める現代社会への、ひとつの比喩でもあります。";
+  box.classList.add('show');
+}
+
+function draw(){
+  ctx.clearRect(0,0,300,240);
+  ctx.strokeStyle = 'rgba(90,209,209,0.04)';
+  for(let i=0;i<300;i+=20){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,240); ctx.stroke(); }
+
+  mice.forEach(m=>{
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.withdrawn?2.6:3.2, 0, Math.PI*2);
+    ctx.fillStyle = m.withdrawn ? 'rgba(232,122,154,0.85)' : 'rgba(90,209,209,0.9)';
+    ctx.fill();
+
+    if (m.hasLabel){
+      ctx.font = '8px sans-serif';
+      ctx.fillStyle = 'rgba(232,232,240,0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('人間', m.x, m.y - 7);
+    }
+  });
+}
+
+function pushLog(){
+  const list = document.getElementById('log-list');
+  const isLowResource = resource < 35;
+  const pool = isLowResource ? logMessagesLow : logMessagesHigh;
+  const msg = pool[Math.floor(Math.random()*pool.length)];
+  const label = String.fromCharCode(65 + Math.floor(Math.random()*8));
+  list.innerHTML = '';
+  const div = document.createElement('div');
+  if (isLowResource) div.classList.add('shoulder');
+  div.textContent = `・個体${label}：${msg}`;
+  list.appendChild(div);
+}
+
+function loop(){
+  if(!running) return;
+  updateSimulation();
+  draw();
+  if (tick % 70 === 0) pushLog();
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('resource-slider').addEventListener('input', e=>{
+  resource = Number(e.target.value);
+  document.getElementById('slider-val').textContent = resource;
+});
+
+function startGame(){
+  initAudio();
+  document.getElementById('splash').style.opacity = 0;
+  setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, 600);
+  document.getElementById('main').style.display = 'block';
+  resizeCanvas();
+  initMice(45);
+  running = true;
+  loop();
+}
+
+function resetGame(){
+  tick = 0; population = 70; realPopulation = 120_000_000; happiness = 50; birthRate = 1.2; withdrawRate = 0;
+  resource = 50; insightShown = false; extinct = false; lastBeepPop = null; reminderTimer = 0; dangerStage = 0;
+  soulDeathRate = 0; soulBoxRevealed = false; soulGameOver = false;
+  currentYear = 2026; yearAccumulator = 0;
+  document.getElementById('year-value').textContent = 2026;
+  document.getElementById('resource-slider').value = 50;
+  document.getElementById('slider-val').textContent = 50;
+  document.getElementById('val-birth').style.color = '#7be38a';
+  document.getElementById('insight').classList.remove('show');
+  document.getElementById('log-list').innerHTML = '';
+  document.getElementById('danger-frame').classList.remove('active');
+  document.getElementById('soul-box').style.display = 'none';
+  document.getElementById('val-soul').textContent = '0%';
+  document.getElementById('bar-soul').style.width = '0%';
+  document.body.classList.remove('shake');
+  initMice(45);
+  if (!running){ running = true; loop(); }
+}
+
+const eggLines = [
+  "「資源を与えすぎるな」とネズミは言わない。言わないが、結果が物語っている。",
+  "争わない世界は、優しいのではなく、無風なだけかもしれない。",
+  "毛づくろいは平和の証か、それとも諦めの証か。",
+  "ひろゆき先生「これ見て何か学んだ気になるの、それもう一種の引きこもり化だよね」"
+];
+function showEgg(){
+  document.getElementById('egg-text').textContent =
+    eggLines[Math.floor(Math.random()*eggLines.length)];
+}
+
+window.addEventListener('resize', ()=>{ if(running) resizeCanvas(); });
+</script>
+</body>
+</html>
