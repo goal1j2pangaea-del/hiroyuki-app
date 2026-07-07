@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資本クエスト 〜ラスボスは複利〜</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #050510; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    min-height: 100vh; font-family: 'Courier New', monospace; padding-top: 10px; }
+  canvas { width: 96vw; height: auto; max-height: 76vh; border: 3px solid #b06cff; box-shadow: 0 0 24px #b06cff88;
+    image-rendering: pixelated; touch-action: none; }
+  .controls { margin-top: 14px; display: flex; gap: 48px; }
+  button {
+    background: #14081a; color: #b06cff; border: 3px solid #b06cff;
+    width: 88px; height: 88px; font-size: 2.2rem; border-radius: 20px; cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; touch-action: manipulation;
+    box-shadow: 0 0 12px #b06cff66;
+  }
+  button:active { background: #b06cff; color: #050510; }
+  .hint { color: #888; font-size: 0.7rem; margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<canvas id="c" width="360" height="600"></canvas>
+<div class="controls">
+  <button id="left">◀</button>
+  <button id="right">▶</button>
+</div>
+<div class="hint">◀ ▶ ボタンで移動（弾は自動で連射）</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 360, H = 600;
+
+// title → play → bossIntro → boss → clear → doom → ending / over
+let state = 'title';
+let frame = 0, stateTimer = 0;
+
+const player = { x: W/2 - 12, y: H - 60, w: 24, h: 24, speed: 3.6, hp: 3, cool: 0, inv: 0 };
+let bullets = [], enemies = [], eBullets = [], particles = [], score = 0, spawnTimer = 0;
+let killCount = 0;
+const BOSS_TRIGGER = 12;
+
+let boss = null;
+let beam = null;
+
+const trivia = [
+  '複式簿記：1つの取引を"2つの顔"で見る技術',
+  'R>G：資本の伸びは労働の伸びに勝つ。種銭を働かせろ',
+  '複利：利息が利息を生む。時間こそ最強の武器',
+  '損益分岐点：売上と費用が交わる点。超えて初めて利益',
+  '減価償却：買った瞬間ではなく"使う年数"で費用にする',
+  '所得控除：課税される前に引ける額。知らないと損',
+  '貸借対照表：右は"集め方"、左は"使い道"',
+  'インデックス投資：市場を丸ごと買う。負けにくい戦い方',
+  'S&P500：米国の代表500社。世界経済のエンジン',
+  '経費：事業のための支出。私生活との線引きが命',
+];
+let triviaText = '', triviaTimer = 0;
+
+// ===== 音（Web Audio / ファイル不要） =====
+let actx = null, bgmTimer = null;
+function initAudio(){ if(actx) return; try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+function tone(freq,dur,type,vol,when){
+  if(!actx) return;
+  const t = when||actx.currentTime;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'square'; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(vol||0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur);
+}
+function sfxShoot()  { tone(880,0.05,'square',0.03); }
+function sfxHit()    { tone(220,0.06,'sawtooth',0.06); }
+function sfxExplode(){ tone(140,0.18,'sawtooth',0.12); tone(90,0.22,'triangle',0.1); }
+function sfxDamage() { tone(120,0.3,'sawtooth',0.15); }
+function sfxCharge() { if(!actx)return; const t=actx.currentTime; for(let i=0;i<20;i++) tone(150+i*30,0.5,'sawtooth',0.1,t+i*0.05); }
+function sfxBoom()   { if(!actx)return; const t=actx.currentTime; tone(70,0.8,'sawtooth',0.25,t); tone(45,1.0,'triangle',0.2,t); }
+function sfxShipBreak(){ if(!actx)return; const t=actx.currentTime; for(let i=0;i<10;i++) tone(400-i*30,0.08,'square',0.14,t+i*0.04); tone(90,0.5,'sawtooth',0.2,t); }
+// 残念な下降メロディ（テッテレ〜…）
+function playGameOverJingle(){
+  if(!actx) return; const t=actx.currentTime;
+  const notes=[392.0,349.2,311.1,261.6];
+  notes.forEach((f,i)=> tone(f,0.5,'triangle',0.14,t+i*0.28));
+  tone(196.0,0.9,'triangle',0.14,t+notes.length*0.28);
+}
+
+const bassSeq=[130.8,130.8,174.6,130.8,196.0,196.0,174.6,146.8];
+const leadSeq=[523.2,659.2,784.0,659.2,587.3,523.2,659.2,784.0];
+let bgmStep=0;
+function startBGM(){
+  if(!actx||bgmTimer) return;
+  bgmTimer=setInterval(()=>{
+    if(state==='title'||state==='over'||state==='ending') return;
+    const t=actx.currentTime;
+    tone(bassSeq[bgmStep%8],0.22,'triangle',0.09,t);
+    tone(leadSeq[bgmStep%8],0.14,'square',0.04,t);
+    bgmStep++;
+  },180);
+}
+
+// ===== 入力 =====
+const keys={left:false,right:false};
+document.addEventListener('keydown',e=>{
+  if(state==='title'&&(e.key===' '||e.key==='Enter')){ startGame(); e.preventDefault(); return; }
+  if((state==='over'||state==='ending')&&e.key==='Enter'){ startGame(); return; }
+  if(e.key==='ArrowLeft') keys.left=true;
+  if(e.key==='ArrowRight') keys.right=true;
+  if(['ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft') keys.left=false;
+  if(e.key==='ArrowRight') keys.right=false;
+});
+function holdBtn(id,key){
+  const b=document.getElementById(id);
+  b.addEventListener('pointerdown',e=>{ e.preventDefault(); if(state==='title'){startGame();return;} keys[key]=true; });
+  b.addEventListener('pointerup',()=>keys[key]=false);
+  b.addEventListener('pointerleave',()=>keys[key]=false);
+}
+holdBtn('left','left'); holdBtn('right','right');
+
+canvas.addEventListener('pointerdown',e=>{
+  if(state==='title'||state==='over'||state==='ending'){ startGame(); }
+});
+
+const stars=Array.from({length:60},()=>({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+0.5}));
+
+function startGame(){
+  initAudio(); if(actx&&actx.state==='suspended') actx.resume(); startBGM();
+  state='play'; stateTimer=0;
+  player.x=W/2-12; player.y=H-60; player.hp=3; player.inv=0; player.cool=0;
+  bullets=[]; enemies=[]; eBullets=[]; particles=[]; score=0; spawnTimer=0; killCount=0;
+  boss=null; beam=null; triviaTimer=0;
+}
+
+function spawnEnemy(){
+  const type=Math.random()<0.25?'big':'small';
+  if(type==='big') enemies.push({x:Math.random()*(W-40),y:-40,w:40,h:32,hp:4,type,t:0,vx:(Math.random()<0.5?1:-1)*1.2});
+  else enemies.push({x:Math.random()*(W-24),y:-24,w:24,h:24,hp:1,type,t:Math.random()*100,vx:0});
+}
+function burst(x,y,color,n){
+  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, sp=Math.random()*3+1;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:25,color}); }
+}
+function showTrivia(){ triviaText=trivia[Math.floor(Math.random()*trivia.length)]; triviaTimer=150; }
+
+function hitPlayer(){
+  if(player.inv>0) return;
+  player.hp--; player.inv=90; sfxDamage();
+  burst(player.x+player.w/2,player.y+player.h/2,'#b06cff',14);
+  if(player.hp<=0){ state='over'; stateTimer=0; sfxShipBreak(); playGameOverJingle(); }
+}
+
+function update(){
+  frame++; stateTimer++;
+  for(const s of stars){ s.y+=s.s; if(s.y>H){s.y=0;s.x=Math.random()*W;} }
+  if(triviaTimer>0) triviaTimer--;
+
+  if(state==='play'||state==='boss'){
+    if(keys.left) player.x-=player.speed;
+    if(keys.right) player.x+=player.speed;
+    player.x=Math.max(0,Math.min(W-player.w,player.x));
+    if(player.cool>0) player.cool--;
+    if(player.cool===0){ bullets.push({x:player.x+player.w/2-2,y:player.y,w:4,h:12}); player.cool=9; sfxShoot(); }
+    if(player.inv>0) player.inv--;
+  }
+  for(let i=bullets.length-1;i>=0;i--){ bullets[i].y-=8; if(bullets[i].y<-12) bullets.splice(i,1); }
+
+  if(state==='play'){
+    spawnTimer++;
+    if(spawnTimer>45){ spawnEnemy(); spawnTimer=0; }
+    for(let i=enemies.length-1;i>=0;i--){
+      const en=enemies[i]; en.t++;
+      if(en.type==='small'){ en.y+=1.8; en.x+=Math.sin(en.t/30)*1.5; }
+      else{ en.y+=0.8; en.x+=en.vx; if(en.x<0||en.x+en.w>W) en.vx*=-1;
+        if(en.t%70===0) eBullets.push({x:en.x+en.w/2-3,y:en.y+en.h,w:6,h:6,vx:(player.x-en.x)/120,vy:2.5}); }
+      if(en.y>H+40) enemies.splice(i,1);
+    }
+    for(let i=enemies.length-1;i>=0;i--){ const en=enemies[i];
+      for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j];
+        if(b.x<en.x+en.w&&b.x+b.w>en.x&&b.y<en.y+en.h&&b.y+b.h>en.y){
+          bullets.splice(j,1); en.hp--; sfxHit(); burst(b.x,b.y,'#ff9a3c',4);
+          if(en.hp<=0){ sfxExplode(); burst(en.x+en.w/2,en.y+en.h/2,en.type==='big'?'#ff7a3c':'#ff4d6d',en.type==='big'?16:8);
+            score+=en.type==='big'?100:30; killCount++; showTrivia(); enemies.splice(i,1); }
+          break;
+        } } }
+    if(killCount>=BOSS_TRIGGER){ state='bossIntro'; stateTimer=0; enemies=[]; eBullets=[]; }
+  }
+
+  if(state==='bossIntro'){
+    if(stateTimer===1) sfxExplode();
+    if(stateTimer>90){ boss={x:W/2-55,y:50,w:110,h:66,hp:40,maxhp:40,vx:2,t:0}; state='boss'; stateTimer=0; triviaTimer=0; }
+  }
+
+  if(state==='boss'&&boss){
+    boss.t++; boss.x+=boss.vx;
+    if(boss.x<0||boss.x+boss.w>W) boss.vx*=-1;
+    if(boss.t%35===0){ for(let k=-1;k<=1;k++) eBullets.push({x:boss.x+boss.w/2-3,y:boss.y+boss.h,w:8,h:8,vx:k*1.4,vy:2.6}); }
+    for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j];
+      if(b.x<boss.x+boss.w&&b.x+b.w>boss.x&&b.y<boss.y+boss.h&&b.y+b.h>boss.y){
+        bullets.splice(j,1); boss.hp--; sfxHit(); burst(b.x,b.y,'#ff9a3c',3);
+        if(boss.hp<=0){ sfxExplode(); burst(boss.x+boss.w/2,boss.y+boss.h/2,'#ffe066',40); state='clear'; stateTimer=0; }
+      } }
+  }
+
+  if(state==='clear'){ if(stateTimer>110){ state='doom'; stateTimer=0; beam={charge:0}; sfxCharge(); } }
+
+  if(state==='doom'&&beam){
+    beam.charge++;
+    if(beam.charge===42) sfxBoom();
+    if(beam.charge>52&&player.hp>0){ player.hp=0; sfxShipBreak(); burst(player.x+player.w/2,player.y+player.h/2,'#fff',36); }
+    if(beam.charge>115){ state='ending'; stateTimer=0; playGameOverJingle(); }
+  }
+
+  for(let i=eBullets.length-1;i>=0;i--){ const b=eBullets[i]; b.x+=b.vx; b.y+=b.vy; if(b.y>H+10) eBullets.splice(i,1); }
+  if(state==='play'||state==='boss'){
+    for(let i=enemies.length-1;i>=0;i--){ const en=enemies[i];
+      if(en.x<player.x+player.w&&en.x+en.w>player.x&&en.y<player.y+player.h&&en.y+en.h>player.y){ hitPlayer(); enemies.splice(i,1); } }
+    for(let i=eBullets.length-1;i>=0;i--){ const b=eBullets[i];
+      if(b.x<player.x+player.w&&b.x+b.w>player.x&&b.y<player.y+player.h&&b.y+b.h>player.y){ hitPlayer(); eBullets.splice(i,1); } }
+  }
+
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--; if(p.life<=0) particles.splice(i,1); }
+}
+
+// ===== 描画 =====
+function drawShip(x,y,w,h){
+  ctx.fillStyle='#8a3ce0';
+  ctx.beginPath(); ctx.moveTo(x+w/2,y); ctx.lineTo(x+w*0.72,y+h); ctx.lineTo(x+w*0.28,y+h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#ff9a3c';
+  ctx.beginPath(); ctx.moveTo(x,y+h); ctx.lineTo(x+w*0.28,y+h*0.55); ctx.lineTo(x+w*0.28,y+h); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+w,y+h); ctx.lineTo(x+w*0.72,y+h*0.55); ctx.lineTo(x+w*0.72,y+h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.fillRect(x+w/2-2,y+h*0.35,4,6);
+}
+function drawBoss(mouthGlow){
+  if(!boss) return; const b=boss;
+  ctx.fillStyle='#6a1fb0'; ctx.fillRect(b.x,b.y,b.w,b.h);
+  ctx.fillStyle='#ff5a4d'; ctx.fillRect(b.x+16,b.y+18,20,15); ctx.fillRect(b.x+b.w-36,b.y+18,20,15);
+  // 口
+  ctx.fillStyle = mouthGlow ? '#fff' : '#ffe066';
+  ctx.fillRect(b.x+b.w/2-16,b.y+b.h-13,32,11);
+  ctx.fillStyle='#2a0a44'; ctx.fillRect(b.x,b.y,b.w,7);
+  ctx.fillStyle='#400'; ctx.fillRect(30,16,W-60,9);
+  ctx.fillStyle='#ff4d6d'; ctx.fillRect(30,16,(W-60)*(b.hp/b.maxhp),9);
+}
+
+function draw(){
+  ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
+  for(const s of stars){ ctx.fillStyle=`rgba(255,255,255,${s.s/2.5})`; ctx.fillRect(s.x,s.y,s.s,s.s); }
+
+  if(state==='title'){
+    drawShip(W/2-26,120,52,52);
+    ctx.textAlign='center';
+    ctx.fillStyle='#b06cff'; ctx.font='bold 40px Courier New'; ctx.fillText('資本クエスト',W/2,270);
+    ctx.fillStyle='#ff9a3c'; ctx.font='bold 18px Courier New'; ctx.fillText('〜 ラスボスは複利 〜',W/2,308);
+    ctx.fillStyle='#fff'; ctx.font='bold 26px Courier New'; ctx.fillText('R ＞ G',W/2,368);
+    ctx.fillStyle='#888'; ctx.font='bold 13px Courier New'; ctx.fillText('労働は、資本に勝てない。',W/2,396);
+    if(frame%60<40){ ctx.fillStyle='#fff'; ctx.font='bold 17px Courier New'; ctx.fillText('▶ タップでスタート ◀',W/2,470); }
+    ctx.fillStyle='#555'; ctx.font='bold 12px Courier New'; ctx.fillText('by Hiroyuki先生',W/2,565);
+    ctx.textAlign='left'; return;
+  }
+
+  ctx.fillStyle='#ff9a3c'; for(const b of bullets) ctx.fillRect(b.x,b.y,b.w,b.h);
+
+  for(const en of enemies){
+    if(en.type==='big'){ ctx.fillStyle='#ff5a4d'; ctx.fillRect(en.x,en.y,en.w,en.h);
+      ctx.fillStyle='#5a1a0a'; ctx.fillRect(en.x+6,en.y+8,8,8); ctx.fillRect(en.x+en.w-14,en.y+8,8,8);
+      ctx.fillStyle='#ffe066'; ctx.fillRect(en.x+en.w/2-3,en.y+en.h-6,6,6); }
+    else{ ctx.fillStyle='#ff4d6d'; ctx.beginPath(); ctx.moveTo(en.x+en.w/2,en.y+en.h); ctx.lineTo(en.x,en.y); ctx.lineTo(en.x+en.w,en.y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillRect(en.x+en.w/2-2,en.y+5,4,4); }
+  }
+
+  const charging = (state==='doom' && beam && beam.charge<42);
+  if(state==='boss'||state==='clear'||state==='doom') drawBoss(charging && frame%6<3);
+
+  ctx.fillStyle='#7ad7ff';
+  for(const b of eBullets){ ctx.beginPath(); ctx.arc(b.x+3,b.y+3,4,0,Math.PI*2); ctx.fill(); }
+
+  for(const p of particles){ ctx.globalAlpha=p.life/25; ctx.fillStyle=p.color; ctx.fillRect(p.x-2,p.y-2,4,4); }
+  ctx.globalAlpha=1;
+
+  const alive = player.hp>0 && !(state==='doom'&&beam&&beam.charge>52) && state!=='over' && state!=='ending';
+  if(alive && !(player.inv>0&&frame%8<4)){
+    drawShip(player.x,player.y,player.w,player.h);
+    ctx.fillStyle=`rgba(255,154,60,${0.5+Math.random()*0.5})`;
+    ctx.fillRect(player.x+player.w/2-3,player.y+player.h,6,4+Math.random()*5);
+  }
+
+  if(state==='play'||state==='boss'){
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Courier New'; ctx.fillText('SCORE '+score,10,H-10);
+    ctx.fillStyle='#ff9a3c'; ctx.fillText('♥'.repeat(Math.max(0,player.hp)),W-78,H-10);
+  }
+
+  // 豆知識ポップ（画面の上のほうに引っ越し → 自機と被らない）
+  if(triviaTimer>0 && state==='play'){
+    ctx.fillStyle='rgba(20,8,26,0.92)'; ctx.fillRect(10,30,W-20,32);
+    ctx.strokeStyle='#ff9a3c'; ctx.lineWidth=2; ctx.strokeRect(10,30,W-20,32);
+    ctx.fillStyle='#ffe066'; ctx.font='bold 12px Courier New'; ctx.textAlign='left';
+    ctx.fillText('💡 '+triviaText,18,51);
+  }
+
+  if(state==='bossIntro'){
+    ctx.textAlign='center';
+    if(frame%20<12){ ctx.fillStyle='#ff4d6d'; ctx.font='bold 28px Courier New'; ctx.fillText('⚠ WARNING ⚠',W/2,H/2); }
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Courier New'; ctx.fillText('ラスボス「複利」が現れた…！',W/2,H/2+34);
+    ctx.textAlign='left';
+  }
+
+  if(state==='clear'){
+    ctx.textAlign='center';
+    ctx.fillStyle='#ffe066'; ctx.font='bold 34px Courier New'; ctx.fillText('🎉 クリア！ 🎉',W/2,H/2);
+    ctx.fillStyle='#fff'; ctx.font='bold 16px Courier New'; ctx.fillText('やった、勝った…！',W/2,H/2+38);
+    ctx.textAlign='left';
+  }
+
+  // ちゃぶ台返し：口から極太の波動砲（回避不能）
+  if(state==='doom'&&beam){
+    const mx = boss? boss.x+boss.w/2 : W/2;
+    const my = boss? boss.y+boss.h : 120;
+    if(beam.charge<42){
+      // 口の前でエネルギーをためる
+      const r = 6 + beam.charge*1.4;
+      ctx.fillStyle=`rgba(255,${Math.max(60,220-beam.charge*4)},80,0.9)`;
+      ctx.beginPath(); ctx.arc(mx,my+8,r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mx,my+8,r*0.5,0,Math.PI*2); ctx.fill();
+      if(frame%16<10){ ctx.textAlign='center'; ctx.fillStyle='#ff4d6d'; ctx.font='bold 24px Courier New'; ctx.fillText('⚠ 回避不能 ⚠',W/2,H/2); ctx.textAlign='left'; }
+    } else {
+      // 発射：口から扇状に画面いっぱいへ
+      const p = Math.min(1,(beam.charge-42)/16);
+      const topW = 44, botW = W*1.6*p + 80;
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.moveTo(mx-topW/2,my); ctx.lineTo(mx+topW/2,my);
+      ctx.lineTo(mx+botW/2,H); ctx.lineTo(mx-botW/2,H); ctx.closePath(); ctx.fill();
+      // ふちのオレンジの光
+      ctx.strokeStyle='#ff9a3c'; ctx.lineWidth=6; ctx.stroke();
+      // 全画面フラッシュ
+      ctx.globalAlpha=0.5*p; ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
+      // 技名：R＞G ／ 複利砲
+      ctx.textAlign='center';
+      ctx.lineWidth=5; ctx.strokeStyle='#2a0a44';
+      ctx.font='bold 40px Courier New';
+      ctx.strokeText('R ＞ G',W/2,H/2-14); ctx.fillStyle='#ff9a3c'; ctx.fillText('R ＞ G',W/2,H/2-14);
+      ctx.font='bold 46px Courier New';
+      ctx.strokeText('複利砲',W/2,H/2+34); ctx.fillStyle='#b06cff'; ctx.fillText('複利砲',W/2,H/2+34);
+      ctx.textAlign='left';
+    }
+  }
+
+  if(state==='ending'){
+    ctx.fillStyle='rgba(0,0,0,0.88)'; ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+    ctx.fillStyle='#b06cff'; ctx.font='bold 24px Courier New'; ctx.fillText('労働で消耗するな。',W/2,H/2-30);
+    ctx.fillStyle='#ff9a3c'; ctx.font='bold 26px Courier New'; ctx.fillText('仕組みを作る側に',W/2,H/2+4);
+    ctx.fillText('回れ！',W/2,H/2+36);
+    ctx.fillStyle='#888'; ctx.font='bold 12px Courier New'; ctx.fillText('― by Hiroyuki先生 ―',W/2,H/2+66);
+    if(frame%60<40){ ctx.fillStyle='#fff'; ctx.font='bold 14px Courier New'; ctx.fillText('タップでもう一度',W/2,H/2+102); }
+    ctx.textAlign='left';
+  }
+
+  if(state==='over'){
+    ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+    ctx.fillStyle='#b06cff'; ctx.font='bold 30px Courier New'; ctx.fillText('GAME OVER',W/2,H/2-20);
+    ctx.fillStyle='#fff'; ctx.font='bold 17px Courier New'; ctx.fillText('SCORE: '+score,W/2,H/2+16);
+    ctx.fillStyle='#ff9a3c'; ctx.font='bold 14px Courier New'; ctx.fillText('タップ / Enter でリトライ',W/2,H/2+48);
+    ctx.textAlign='left';
+  }
+}
+
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
