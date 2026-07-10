@@ -40,9 +40,9 @@ const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
 const W=480,H=360,TILE=40;
 
-// 絵の背景に合わせた「同化色」（白〜クリーム）
-const FLOOR_COLOR='#efeadd';
-const BATTLE_COLOR='#efeadd';
+// 絵の背景に合わせた「同化色」（純白）
+const FLOOR_COLOR='#ffffff';
+const BATTLE_COLOR='#ffffff';
 
 function loadImg(url){
   const im=new Image(); im.ready=false;
@@ -55,8 +55,8 @@ const charaBack = loadImg('chara_back.jpg');
 const charaFront= loadImg('chara_front.jpg');
 const charaSide = loadImg('chara_side.jpg');
 // 窓口
-const enemyMapImg = loadImg('enemy_map.PNG');
-const enemyBossImg= loadImg('enemy_boss.PNG');
+const enemyMapImg = loadImg('enemy_map.jpg');
+const enemyBossImg= loadImg('enemy_boss.jpg');
 
 let frame=0;
 let mode='walk'; // walk / dialog / battleIntro / battle
@@ -200,8 +200,8 @@ function drawBattleBG(){
   ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,H-60,W,60);
 }
 function drawBossBattle(scale,shakeY){
-  // enemy_boss は縦長。縦横比を保って大きく。
-  const bh=280*scale, bw=bh*0.62;
+  // enemy_boss は白背景。縦横比を保って大きく（横広め）。
+  const bh=250*scale, bw=bh*0.95;
   const bx=W/2-bw/2, by=H-40-bh+(shakeY||0);
   ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.ellipse(W/2,H-40,bw*0.42,12*scale,0,0,Math.PI*2); ctx.fill();
   if(enemyBossImg.ready){ ctx.drawImage(enemyBossImg,bx,by,bw,bh); }
