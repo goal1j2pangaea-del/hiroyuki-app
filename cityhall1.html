@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>市役所クエスト 〜生活保護申請〜</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a18; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    min-height:100vh; font-family:'Courier New',monospace; padding-top:10px; }
+  canvas { width:96vw; height:auto; max-height:58vh; border:3px solid #b06cff; box-shadow:0 0 24px #b06cff88;
+    image-rendering:auto; touch-action:none; }
+  .pad { margin-top:12px; width:96vw; display:flex; justify-content:space-between; align-items:flex-end; }
+  .dpad { display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; }
+  .dpad button, .act { background:#14081a; color:#b06cff; border:3px solid #b06cff; border-radius:14px;
+    font-size:1.4rem; font-weight:bold; cursor:pointer;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
+    box-shadow:0 0 10px #b06cff55; }
+  .dpad button:active, .act:active { background:#b06cff; color:#0a0a18; }
+  .dpad .empty { visibility:hidden; border:none; box-shadow:none; background:none; }
+  .act { width:96px; height:96px; font-size:1rem; color:#ff9a3c; border-color:#ff9a3c; box-shadow:0 0 10px #ff9a3c55; }
+  .act:active { background:#ff9a3c; color:#0a0a18; }
+  .hint { color:#888; font-size:0.7rem; margin-top:10px; text-align:center; }
+</style>
+</head>
+<body>
+<canvas id="c" width="480" height="360"></canvas>
+<div class="pad">
+  <div class="dpad">
+    <button class="empty"></button><button id="up">▲</button><button class="empty"></button>
+    <button id="left">◀</button><button class="empty"></button><button id="right">▶</button>
+    <button class="empty"></button><button id="down">▼</button><button class="empty"></button>
+  </div>
+  <button id="talk" class="act">はなす</button>
+</div>
+<div class="hint">十字ボタンで移動・窓口に近づいて「はなす」</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=480,H=360,TILE=40;
+
+// ===== 画像（本棚のファイル。大文字小文字は実物に合わせてある） =====
+function loadImg(url){
+  const im=new Image();
+  im.ready=false;
+  im.onload=()=>{ im.ready=true; };
+  im.onerror=()=>{ im.ready=false; };
+  im.src=url;
+  return im;
+}
+const charaImg   = loadImg('chara1.jpg');       // 主人公（マップ用）
+const enemyMapImg= loadImg('enemy_map.PNG');    // 窓口の人（マップ用ドット絵）
+const enemyBossImg=loadImg('enemy_boss.PNG');   // 窓口の人（バトル用リアル絵）
+
+let frame=0;
+let mode='walk'; // walk / dialog / battleIntro / battle
+
+const player={ x:W/2, y:H-70, w:34, h:48, dir:'up', speed:2.4, moving:false, step:0, stepTimer:0 };
+const clerk={ x:W/2, y:96, w:38, h:52 };
+
+// 「申請」と「相談」がすれ違う、あの現実のワンシーン
+const dialogLines=[
+  '窓口の人「本日はどのようなご用件ですか？」',
+  'あなた「生活保護の……申請に来ました」',
+  '窓口の人「ああ、ご相談ですね」',
+  'あなた「いえ……申請です」',
+  '窓口の人「まずは、ご相談からということで……」',
+];
+let dialogIndex=0;
+
+// ===== 入力 =====
+const keys={up:false,down:false,left:false,right:false};
+function bind(id,key){
+  const b=document.getElementById(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault(); keys[key]=true;});
+  b.addEventListener('pointerup',e=>{e.preventDefault(); keys[key]=false;});
+  b.addEventListener('pointerleave',()=>keys[key]=false);
+}
+bind('up','up'); bind('down','down'); bind('left','left'); bind('right','right');
+document.getElementById('talk').addEventListener('pointerdown',e=>{ e.preventDefault(); onTalk(); });
+canvas.addEventListener('pointerdown',()=>{ if(mode==='dialog'||mode==='battleIntro') onTalk(); });
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp') keys.up=true;
+  if(e.key==='ArrowDown') keys.down=true;
+  if(e.key==='ArrowLeft') keys.left=true;
+  if(e.key==='ArrowRight') keys.right=true;
+  if(e.key===' '||e.key==='Enter') onTalk();
+  if(e.key.startsWith('Arrow')) e.preventDefault();
+});
+document.addEventListener('keyup',e=>{
+  if(e.key==='ArrowUp') keys.up=false;
+  if(e.key==='ArrowDown') keys.down=false;
+  if(e.key==='ArrowLeft') keys.left=false;
+  if(e.key==='ArrowRight') keys.right=false;
+});
+
+function nearClerk(){
+  const dx=Math.abs(player.x-clerk.x);
+  const dy=Math.abs(player.y-(clerk.y+clerk.h+30));
+  return dx<50 && dy<50;
+}
+
+function onTalk(){
+  if(mode==='walk'){
+    if(nearClerk()){ mode='dialog'; dialogIndex=0; }
+  } else if(mode==='dialog'){
+    dialogIndex++;
+    if(dialogIndex>=dialogLines.length){ mode='battleIntro'; frame=0; }
+  } else if(mode==='battleIntro'){
+    mode='battle'; frame=0;
+  }
+}
+
+function update(){
+  frame++;
+  if(mode!=='walk') return;
+  let dx=0,dy=0;
+  if(keys.up){ dy=-player.speed; player.dir='up'; }
+  if(keys.down){ dy=player.speed; player.dir='down'; }
+  if(keys.left){ dx=-player.speed; player.dir='left'; }
+  if(keys.right){ dx=player.speed; player.dir='right'; }
+  player.moving=(dx!==0||dy!==0);
+  player.x+=dx; player.y+=dy;
+  player.x=Math.max(30,Math.min(W-30,player.x));
+  player.y=Math.max(clerk.y+clerk.h+20,Math.min(H-30,player.y));
+  if(player.moving){ player.stepTimer++; if(player.stepTimer>8){ player.step=(player.step+1)%2; player.stepTimer=0; } }
+}
+
+// ===== 描画：マップ =====
+function drawFloor(){
+  ctx.fillStyle='#d8d2c4'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#c4bdae'; ctx.lineWidth=1;
+  for(let x=0;x<=W;x+=TILE){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for(let y=0;y<=H;y+=TILE){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+}
+function drawHall(){
+  ctx.fillStyle='#7a8aa0'; ctx.fillRect(0,0,W,50);
+  ctx.fillStyle='#5a6a80'; ctx.fillRect(0,46,W,4);
+  ctx.fillStyle='#fff'; ctx.font='bold 16px Courier New'; ctx.textAlign='center';
+  ctx.fillText('◆ ○○市役所  福祉課 窓口 ◆',W/2,30); ctx.textAlign='left';
+  ctx.fillStyle='#a06a3c'; ctx.fillRect(60,150,W-120,26);
+  ctx.fillStyle='#7a4a24'; ctx.fillRect(60,172,W-120,6);
+  ctx.fillStyle='#2a2a3a'; ctx.fillRect(W/2-40,132,80,16);
+  ctx.fillStyle='#ffe066'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
+  ctx.fillText('生活保護 相談',W/2,144); ctx.textAlign='left';
+}
+function drawClerkMap(){
+  const c=clerk;
+  ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(c.x,c.y+c.h,20,6,0,0,Math.PI*2); ctx.fill();
+  if(enemyMapImg.ready){
+    ctx.drawImage(enemyMapImg,c.x-c.w/2,c.y,c.w,c.h);
+  } else {
+    ctx.fillStyle='#2a2a40'; ctx.fillRect(c.x-c.w/2,c.y,c.w,c.h);
+    ctx.fillStyle='#f5c87a'; ctx.fillRect(c.x-10,c.y-12,20,14);
+  }
+  if(nearClerk() && mode==='walk'){
+    ctx.fillStyle='#ffe066'; ctx.font='bold 26px Courier New'; ctx.textAlign='center';
+    if(frame%40<26) ctx.fillText('!',c.x,c.y-22);
+    ctx.textAlign='left';
+  }
+}
+function drawPlayer(){
+  const p=player;
+  const bob=p.moving?(p.step===1?-2:0):0;
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0,4,18,5,0,0,Math.PI*2); ctx.fill();
+  if(charaImg.ready){
+    ctx.drawImage(charaImg,-p.w/2,-p.h+bob,p.w,p.h);
+  } else {
+    ctx.fillStyle='#8a3ce0'; ctx.fillRect(-p.w/2,-p.h+bob,p.w,p.h);
+  }
+  ctx.restore();
+}
+function wrapText(text,x,y,maxW,lh){
+  const chars=[...text]; let line='',yy=y;
+  for(const ch of chars){
+    if(ctx.measureText(line+ch).width>maxW){ ctx.fillText(line,x,yy); line=ch; yy+=lh; }
+    else line+=ch;
+  }
+  ctx.fillText(line,x,yy);
+}
+function drawDialog(){
+  ctx.fillStyle='rgba(10,10,30,0.92)'; ctx.fillRect(20,H-96,W-40,76);
+  ctx.strokeStyle='#b06cff'; ctx.lineWidth=3; ctx.strokeRect(20,H-96,W-40,76);
+  ctx.fillStyle='#fff'; ctx.font='bold 14px Courier New';
+  wrapText(dialogLines[dialogIndex],34,H-66,W-68,20);
+  ctx.fillStyle='#ff9a3c'; ctx.font='bold 11px Courier New'; ctx.textAlign='right';
+  ctx.fillText('▶ タップで次へ',W-34,H-28); ctx.textAlign='left';
+}
+
+// ===== 描画：バトル（ドラクエ式・敵だけ大きく表示） =====
+function drawBattleBG(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#3a1a2a'); g.addColorStop(1,'#1a0a14');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#241018'; ctx.fillRect(0,H-70,W,70);
+  ctx.strokeStyle='rgba(255,255,255,0.06)';
+  for(let i=-4;i<8;i++){ ctx.beginPath(); ctx.moveTo(W/2+i*60,H-70); ctx.lineTo(W/2+i*140,H); ctx.stroke(); }
+}
+function drawBossBattle(scale,shakeY){
+  const bw=170*scale, bh=230*scale;
+  const bx=W/2-bw/2, by=H-70-bh+ (shakeY||0);
+  ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(W/2,H-66,80*scale,14*scale,0,0,Math.PI*2); ctx.fill();
+  if(enemyBossImg.ready){
+    ctx.drawImage(enemyBossImg,bx,by,bw,bh);
+  } else {
+    ctx.fillStyle='#555'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#fff'; ctx.font='bold 14px Courier New'; ctx.textAlign='center';
+    ctx.fillText('窓口の人',W/2,by+bh/2); ctx.textAlign='left';
+  }
+}
+
+function draw(){
+  if(mode==='walk' || mode==='dialog'){
+    drawFloor(); drawHall(); drawClerkMap(); drawPlayer();
+    if(mode==='dialog') drawDialog();
+    return;
+  }
+
+  if(mode==='battleIntro'){
+    drawBattleBG();
+    const p=Math.min(1,frame/40);
+    drawBossBattle(0.5+0.5*p, (1-p)*40);
+    ctx.textAlign='center';
+    if(frame<40){
+      ctx.fillStyle='#fff'; ctx.font='bold 16px Courier New';
+      if(frame%20<14) ctx.fillText('窓口の人 が たちはだかった！',W/2,50);
+    } else {
+      ctx.fillStyle='#ff4d6d'; ctx.font='bold 30px Courier New';
+      if(frame%20<14) ctx.fillText('⚔ バトル開始！ ⚔',W/2,50);
+      ctx.fillStyle='#ff9a3c'; ctx.font='bold 12px Courier New';
+      ctx.fillText('タップで つづく…（デモはここまで）',W/2,H-16);
+    }
+    ctx.textAlign='left';
+    return;
+  }
+
+  if(mode==='battle'){
+    drawBattleBG();
+    drawBossBattle(1,0);
+    ctx.fillStyle='rgba(20,8,26,0.9)'; ctx.fillRect(0,H-64,W,64);
+    ctx.strokeStyle='#b06cff'; ctx.lineWidth=2; ctx.strokeRect(0,H-64,W,64);
+    ctx.fillStyle='#fff'; ctx.font='bold 13px Courier New';
+    ctx.fillText('窓口の人「まずは、ご相談から……」',14,H-38);
+    ctx.fillStyle='#888'; ctx.font='bold 11px Courier New';
+    ctx.fillText('（コマンドバトルは次の回で実装します）',14,H-16);
+  }
+}
+
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
