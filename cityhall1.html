@@ -40,7 +40,6 @@ const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
 const W=480,H=360,TILE=40;
 
-// 絵の背景に合わせた「同化色」（純白）
 const FLOOR_COLOR='#ffffff';
 const BATTLE_COLOR='#ffffff';
 
@@ -50,20 +49,17 @@ function loadImg(url){
   im.onerror=()=>{ im.ready=false; };
   im.src=url; return im;
 }
-// 主人公：向き別
 const charaBack = loadImg('chara_back.jpg');
 const charaFront= loadImg('chara_front.jpg');
 const charaSide = loadImg('chara_side.jpg');
-// 窓口
 const enemyMapImg = loadImg('enemy_map.jpg');
 const enemyBossImg= loadImg('enemy_boss.jpg');
 
 let frame=0;
-let mode='walk'; // walk / dialog / battleIntro / battle
+let mode='walk';
 
-// 主人公（縦長の絵に合わせて縦横比をとる：幅42・高さ74くらい）
-const player={ x:W/2, y:H-70, w:42, h:74, dir:'up', speed:2.4, moving:false, step:0, stepTimer:0 };
-const clerk={ x:W/2, y:96, w:44, h:60 };
+const player={ x:W/2, y:H-70, w:56, h:96, dir:'up', speed:2.4, moving:false, step:0, stepTimer:0 };
+const clerk={ x:W/2, y:104, w:60, h:84 };
 
 const dialogLines=[
   '窓口の人「本日はどのようなご用件ですか？」',
@@ -103,7 +99,7 @@ document.addEventListener('keyup',e=>{
 function nearClerk(){
   const dx=Math.abs(player.x-clerk.x);
   const dy=Math.abs(player.y-(clerk.y+clerk.h+34));
-  return dx<54 && dy<54;
+  return dx<64 && dy<64;
 }
 function onTalk(){
   if(mode==='walk'){ if(nearClerk()){ mode='dialog'; dialogIndex=0; } }
@@ -122,11 +118,10 @@ function update(){
   player.moving=(dx!==0||dy!==0);
   player.x+=dx; player.y+=dy;
   player.x=Math.max(30,Math.min(W-30,player.x));
-  player.y=Math.max(clerk.y+clerk.h+16,Math.min(H-30,player.y));
+  player.y=Math.max(clerk.y+clerk.h+22,Math.min(H-30,player.y));
   if(player.moving){ player.stepTimer++; if(player.stepTimer>8){ player.step=(player.step+1)%2; player.stepTimer=0; } }
 }
 
-// ===== マップ描画 =====
 function drawFloor(){
   ctx.fillStyle=FLOOR_COLOR; ctx.fillRect(0,0,W,H);
   ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=1;
@@ -134,17 +129,14 @@ function drawFloor(){
   for(let y=0;y<=H;y+=TILE){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 }
 function drawHall(){
-  // 上の看板
   ctx.fillStyle='#5a6a80'; ctx.fillRect(0,0,W,44);
   ctx.fillStyle='#48566a'; ctx.fillRect(0,40,W,4);
   ctx.fillStyle='#fff'; ctx.font='bold 15px Courier New'; ctx.textAlign='center';
   ctx.fillText('キタ区役所  生活支援課  生活保護窓口',W/2,28); ctx.textAlign='left';
-  // 受付カウンター（茶色の長机）
-  ctx.fillStyle='#a06a3c'; ctx.fillRect(50,150,W-100,26);
-  ctx.fillStyle='#7a4a24'; ctx.fillRect(50,172,W-100,6);
-  // 机の上に「生活支援課」
-  ctx.fillStyle='#fff'; ctx.font='bold 13px Courier New'; ctx.textAlign='center';
-  ctx.fillText('生活支援課',W/2,168); ctx.textAlign='left';
+  ctx.strokeStyle='#a06a3c'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(50,176); ctx.lineTo(W-50,176); ctx.stroke();
+  ctx.fillStyle='#a06a3c'; ctx.font='bold 12px Courier New'; ctx.textAlign='center';
+  ctx.fillText('― 生活支援課 ―',W/2,196); ctx.textAlign='left';
 }
 function drawClerkMap(){
   const c=clerk;
@@ -163,7 +155,6 @@ function drawPlayer(){
   ctx.save();
   ctx.translate(p.x,p.y);
   ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0,4,20,5,0,0,Math.PI*2); ctx.fill();
-  // 向きで絵を選ぶ
   let im=charaFront, flip=false;
   if(p.dir==='up') im=charaBack;
   else if(p.dir==='down') im=charaFront;
@@ -194,13 +185,11 @@ function drawDialog(){
   ctx.fillText('▶ タップで次へ',W-34,H-28); ctx.textAlign='left';
 }
 
-// ===== バトル描画（背景を絵と同化・敵を大きく） =====
 function drawBattleBG(){
   ctx.fillStyle=BATTLE_COLOR; ctx.fillRect(0,0,W,H);
   ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,H-60,W,60);
 }
 function drawBossBattle(scale,shakeY){
-  // enemy_boss は白背景。縦横比を保って大きく（横広め）。
   const bh=250*scale, bw=bh*0.95;
   const bx=W/2-bw/2, by=H-40-bh+(shakeY||0);
   ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.ellipse(W/2,H-40,bw*0.42,12*scale,0,0,Math.PI*2); ctx.fill();
