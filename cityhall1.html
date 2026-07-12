@@ -7,8 +7,8 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#0a0a18; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    min-height:100vh; font-family:'Courier New',monospace; padding-top:10px; }
-  canvas { width:96vw; height:auto; max-height:58vh; border:3px solid #b06cff; box-shadow:0 0 24px #b06cff88;
+    min-height:100vh; font-family:'Courier New',monospace; padding-top:6px; }
+  canvas { width:98vw; height:auto; max-height:64vh; border:3px solid #b06cff; box-shadow:0 0 24px #b06cff88;
     image-rendering:auto; touch-action:none; }
   .pad { margin-top:12px; width:96vw; display:flex; justify-content:space-between; align-items:flex-end; }
   .dpad { display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,58px); gap:6px; }
@@ -21,11 +21,34 @@
   .act { width:96px; height:96px; font-size:1rem; color:#ff9a3c; border-color:#ff9a3c; box-shadow:0 0 10px #ff9a3c55; }
   .act:active { background:#ff9a3c; color:#0a0a18; }
   .hint { color:#888; font-size:0.7rem; margin-top:10px; text-align:center; }
+
+  /* ===== バトル用パネル ===== */
+  #battlePanel { display:none; width:98vw; margin-top:8px; }
+  #choices { display:flex; flex-direction:column; gap:7px; }
+  .choice {
+    background:#14081a; color:#fff; border:2px solid #b06cff; border-radius:10px;
+    padding:12px 14px; font-size:0.95rem; font-weight:bold; text-align:left; line-height:1.45;
+    font-family:'Courier New',monospace; cursor:pointer;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
+    box-shadow:0 0 8px #b06cff44;
+  }
+  .choice:active { background:#b06cff; color:#0a0a18; }
+  .choice.back { border-color:#666; color:#aaa; }
+  .choice.danger { border-color:#c0304a; color:#ff8a9a; }
+  .choice.next { border-color:#ff9a3c; color:#ff9a3c; text-align:center; }
+  #senseiBox {
+    display:none; margin-top:10px; background:#1a1020; border:2px solid #ff9a3c;
+    border-radius:12px; padding:11px 13px; margin-bottom:16px;
+  }
+  #senseiTitle { color:#ff9a3c; font-weight:bold; font-size:0.85rem; margin-bottom:6px; }
+  #senseiText { color:#ffe0b0; font-size:0.82rem; line-height:1.6; }
 </style>
 </head>
 <body>
-<canvas id="c" width="480" height="360"></canvas>
-<div class="pad">
+<canvas id="c" width="480" height="560"></canvas>
+
+<!-- マップ移動用（バトル中は隠れる） -->
+<div class="pad" id="mapPad">
   <div class="dpad">
     <button class="empty"></button><button id="up">▲</button><button class="empty"></button>
     <button id="left">◀</button><button class="empty"></button><button id="right">▶</button>
@@ -33,13 +56,23 @@
   </div>
   <button id="talk" class="act">はなす</button>
 </div>
-<div class="hint">十字ボタンで移動・窓口に近づいて「はなす」</div>
+<div class="hint" id="mapHint">十字ボタンで移動・窓口に近づいて「はなす」</div>
+
+<!-- バトル用：選択肢をタップ＋解説パネル（マップ中は隠れる） -->
+<div id="battlePanel">
+  <div id="choices"></div>
+  <div id="senseiBox">
+    <div id="senseiTitle">💡 ヒロユキ先生</div>
+    <div id="senseiText"></div>
+  </div>
+</div>
 
 <script>
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
-const W=480,H=360,TILE=40;
+const W=480,H=560,TILE=40;
 
+// 絵の背景に合わせた「同化色」（白〜クリーム）
 const FLOOR_COLOR='#ffffff';
 const BATTLE_COLOR='#ffffff';
 
@@ -49,11 +82,17 @@ function loadImg(url){
   im.onerror=()=>{ im.ready=false; };
   im.src=url; return im;
 }
+// 主人公：向き別
 const charaBack = loadImg('chara_back.jpg');
 const charaFront= loadImg('chara_front.jpg');
 const charaSide = loadImg('chara_side.jpg');
+// 窓口
 const enemyMapImg = loadImg('enemy_map.jpg');
 const enemyBossImg= loadImg('enemy_boss.jpg');
+// 裏クエスト：美女職員
+const ladyMapImg  = loadImg('lady_map.PNG');
+const ladyBossImg = loadImg('lady_boss.PNG');
+const ladyAngryImg= loadImg('lady_angry.PNG');
 
 let frame=0;
 let mode='walk';
@@ -72,16 +111,21 @@ function tone(freq,dur,type,vol,when){
   g.gain.setValueAtTime(vol||0.08,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
   o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur);
 }
+// のんびり市役所テーマ（明るい・ゆったり）
 const walkBass=[130.8,146.8,164.8,146.8];
 const walkLead=[392.0,440.0,523.2,440.0,392.0,349.2,392.0,440.0];
+// 緊張感のあるバトルテーマ（低く・速い）
 const battleBass=[82.4,82.4,92.5,82.4,110.0,110.0,98.0,82.4];
 const battleLead=[220.0,246.9,220.0,196.0,220.0,246.9,261.6,246.9];
+// 勝利エンドロール用：明るいテーマ
+const winBass=[261.6,261.6,349.2,392.0,440.0,392.0,349.2,293.7];
+const winLead=[523.2,659.2,784.0,659.2,880.0,784.0,659.2,523.2];
 
 function startBgm(kind){
   if(currentBgm===kind) return;
   currentBgm=kind; bgmStep=0;
   if(bgmTimer) clearInterval(bgmTimer);
-  const interval = kind==='battle' ? 150 : 260;
+  const interval = kind==='battle' ? 150 : (kind==='win' ? 210 : 260);
   bgmTimer=setInterval(()=>{
     if(!actx) return;
     const t=actx.currentTime;
@@ -91,20 +135,26 @@ function startBgm(kind){
     } else if(kind==='battle'){
       tone(battleBass[bgmStep%battleBass.length],0.16,'sawtooth',0.09,t);
       tone(battleLead[bgmStep%battleLead.length],0.1,'square',0.05,t);
+    } else if(kind==='win'){
+      tone(winBass[bgmStep%winBass.length],0.22,'triangle',0.08,t);
+      tone(winLead[bgmStep%winLead.length],0.28,'square',0.07,t);
     }
     bgmStep++;
   }, interval);
 }
+function stopBgm(){ if(bgmTimer) clearInterval(bgmTimer); bgmTimer=null; currentBgm=''; }
+// 最初のタップでオーディオ解禁＆歩行BGM開始
 function unlockAudioAndStart(){
   initAudio();
   if(actx && actx.state==='suspended') actx.resume();
   startBgm('walk');
 }
 canvas.addEventListener('pointerdown', unlockAudioAndStart, { once:true });
-document.addEventListener('keydown', unlockAudioAndStart, { once:true });
+document.addEventListener('keydown', unlockAudioAndStart, { once:true }); // walk / dialog / battleIntro / battle
 
+// 主人公（縦長の絵に合わせて縦横比をとる：幅42・高さ70くらい）
 const player={ x:W/2, y:H-70, w:56, h:96, dir:'up', speed:2.4, moving:false, step:0, stepTimer:0 };
-const clerk={ x:W/2, y:70, w:60, h:84 };
+const clerk={ x:W/2, y:90, w:60, h:84 }; // ラインより奥（上）に配置
 
 const dialogLines=[
   '窓口の人「本日はどのようなご用件ですか？」',
@@ -115,6 +165,195 @@ const dialogLines=[
 ];
 let dialogIndex=0;
 
+// ===== 戦闘データ =====
+const P_HPMAX=100, E_HPMAX=180;
+let pHP=P_HPMAX, eHP=E_HPMAX;
+let scIndex=0;             // シナリオの現在位置
+let logLine='', enemyLine='', senseiLine='';
+let turnPhase='auto';      // auto / choice / over
+let battleResult='';
+let hasShindan=false;
+let dmgPop=null;           // ダメージ表示 {text,color,t,side}
+let critFlash=0;           // 痛恨の一撃の赤フラッシュ
+let rollY=0;               // エンドロールのスクロール位置
+let secretIndex=0;         // 裏クエストの進行
+let secretAngry=false;     // 激怒状態
+
+// ===== エンドロール：勝ち取ったもの =====
+const CREDITS = [
+  {t:'—— あなたが 勝ち取ったもの ——', big:true},
+  {t:''},
+  {t:'国民健康保険料', s:'全額 免除'},
+  {t:'国民年金保険料', s:'全額 免除'},
+  {t:'住民税', s:'非課税'},
+  {t:'所得税', s:'非課税'},
+  {t:''},
+  {t:'医療費（医療扶助）', s:'自己負担 0円'},
+  {t:'介護サービス費', s:'原則 自己負担なし'},
+  {t:'家賃（住宅扶助）', s:'上限まで 支給'},
+  {t:'生活費（生活扶助）', s:'毎月 支給'},
+  {t:''},
+  {t:'NHK受信料', s:'免除'},
+  {t:'上下水道の基本料金', s:'減免（自治体による）'},
+  {t:'公共交通の運賃', s:'減免（自治体による）'},
+  {t:'保育料・給食費', s:'免除・支給'},
+  {t:'義務教育の学用品費', s:'支給'},
+  {t:''},
+  {t:'——————————————'},
+  {t:''},
+  {t:'これらは すべて', big:true},
+  {t:'「窓口で追い返されていたら」', big:true},
+  {t:'一つも 手に入らなかった。', big:true},
+  {t:''},
+  {t:'知らないことは、'},
+  {t:'そのまま 損失になる。'},
+  {t:''},
+  {t:''},
+  {t:'―― 3週間後 ――', big:true},
+  {t:''},
+  {t:'保護決定通知書 を 受け取った。', big:true},
+  {t:''},
+  {t:'（審査には、目安として'},
+  {t:'　2週間〜1ヶ月ほどかかる）'},
+  {t:''},
+  {t:'——————————————'},
+  {t:''},
+  {t:'そして 覚えておけ。'},
+  {t:'これは 戦って 勝ち取るものでは ない。'},
+  {t:'憲法25条が 保障する 権利だ。'},
+  {t:''},
+  {t:'戦わねば 得られない 仕組みのほうが、'},
+  {t:'間違っている。', big:true},
+  {t:''},
+  {t:''},
+  {t:'市役所クエスト', big:true},
+  {t:'〜 生活保護申請 〜'},
+  {t:''},
+  {t:'企画・構成・監修'},
+  {t:'Hiroyuki先生', big:true},
+  {t:''},
+  {t:''},
+  {t:'…… ん？'},
+  {t:'まだ 何か あるようだ ……'},
+];
+
+// ===== 裏クエスト：美人窓口（マップ→話しかける→2択） =====
+const SECRET_DIALOG = [
+  '（申請は通った。……はずだった）',
+  '（だが後日、追加書類を求められ、再び窓口へ）',
+  '（……担当が、変わっている）',
+  '職員「本日はどのようなご用件でしょうか？」',
+];
+const SECRET_CHOICES = [
+  { label:'「あの、連絡先……LINEとか、教えてもらえませんか」',
+    result:'職員「……（表情が凍る）少々よろしいですか、係長——」',
+    over:'職員「この方、業務と関係のないことを聞いてきます」' },
+  { label:'（手を伸ばして、触れる）',
+    result:'職員「——ちょっと！！ 何をするんですか！」',
+    over:'職員「警備員さん！ 警察を呼んでください！」' },
+];
+// どちらを選んでも、同じ結末。同じ説教。
+const SECRET_SENSEI = 'ハラスメントだ。窓口の職員は、あなたの申請を処理するためにそこにいる。それ以外の何者でもない。……そして、これがこの裏面の本題だ。よく見ろ。相手が優しそうな美人でも、返ってくる言葉は「ご相談ですね」だった。水際作戦は、担当者の見た目でも人柄でも意地悪さでもない。制度と運用の問題だ。誰が座っていても、同じことが起きる。相手を憎むな。仕組みを知れ。そして——相手を、人として敬え。';
+
+let secretPhase='map';   // map / dialog / choice / over
+let secretDlgIndex=0;
+
+// ===== シナリオ（オート進行＋要所で選択肢） =====
+const SCENARIO = [
+  { type:'mono', text:'（俺は、税も保険料も払い続けてきた）' },
+  { type:'mono', text:'（だがある日、計算してしまった）' },
+  { type:'mono', text:'（働いて手取りを削られ続けるより、保護を受けたほうが可処分所得は上だと）' },
+  { type:'mono', text:'（この国の財政は、もう壊れている。……だが、それを窓口で言えば終わりだ）',
+    sensei:'これが主人公の"言えない真実"だ。負担率の高さゆえに、制度上ここに辿り着いてしまう人がいる。だが窓口で制度批判をしても保護は降りない。淡々と、要件に沿って権利を行使しろ。' },
+
+  { type:'enemy', text:'窓口の人「本日はどのようなご用件で？」', dmg:0 },
+  { type:'choice', q:'▼ 第一声で勝負は決まる ▼', options:[
+    { label:'「生活保護の“申請”に来ました」', good:true, dmg:26,
+      result:'窓口の人「……申請、ですか。（口ごもる）」',
+      sensei:'正解。ここが最大の分岐だ。「相談」と言った瞬間、申請書は出てこない。役所は“相談”として処理し、申請日が記録に残らない。保護費は申請日から起算されるため、金銭的にも損をする。必ず「申請」と言え。' },
+    { label:'「ちょっと相談したいことが……」', good:false, self:22,
+      result:'窓口の人「はい、ご相談ですね。ではお話を伺います」',
+      sensei:'これが水際作戦の入口だ。“相談”として処理されると、申請書は出てこない。申請日も残らない。あなたは今、記録上“申請していない人”になった。' },
+    { label:'「生活が苦しくて、助けてほしくて……」', good:false, self:16,
+      result:'窓口の人「お気持ちはわかります。まずはご相談から」',
+      sensei:'情に訴えても、窓口は“相談”に流すだけだ。生活保護はお情けではない。憲法25条が保障する権利だ。頭を下げる必要はない。' },
+  ]},
+
+  { type:'enemy', text:'窓口の人「では、必要書類はお持ちですか？」', dmg:0 },
+  { type:'enemy', text:'窓口の人「揃っていないなら、全部揃えてから、また来てください」', dmg:12,
+    sensei:'出た、書類の壁。最も多用される追い返しの手口だ。だが——書類が未完でも、申請は受理されなければならない。' },
+  { type:'choice', q:'▼ 膠着。役所対応にブチかませ ▼', options:[
+    { label:'「手ぶらでも申請できます。厚労省の通達にあります」', good:true, dmg:30,
+      result:'窓口の人「……ぐぬぬ。お詳しいですね」',
+      sensei:'正解。「手ぶら申請」だ。申請権は書類の有無に左右されない。書類は申請後に揃えればよい。「揃えてから来い」と言って申請書を渡さないのは違法な運用だ。' },
+    { label:'スマホで通達を検索して見せる', good:true, dmg:26,
+      result:'窓口の人「……（画面を覗き込み、黙る）」',
+      sensei:'これも有効だ。今はその場で調べられる。「そういう決まりです」と言われたら「どの条文ですか」と返せ。役所が示せないなら、それは決まりではなく“役所の都合”だ。' },
+    { label:'「わかりました、出直します」', good:false, self:999, surrender:true,
+      result:'窓口の人「はい、お待ちしております」（申請日は、残らなかった）',
+      sensei:'追い返された。これが水際作戦だ。出直した人の多くは、二度と来ない。申請日は記録されず、保護費の起算日も失われた。' },
+  ]},
+
+  { type:'enemy', text:'窓口の人「しかし、あなたはまだお若い」', dmg:0 },
+  { type:'enemy', text:'窓口の人「もう少し頑張って、仕事を探してみては？」', dmg:14,
+    sensei:'精神論による揺さぶり。医学的根拠のない、窓口の主観にすぎない。感情で反論しても効かない。必要なのは“客観”だ。' },
+  { type:'choice', q:'▼ 精神論を、客観でぶった斬れ ▼', options:[
+    { label:'診断書を出す（医師：就労困難）', good:true, dmg:32, guard:true,
+      result:'窓口の人「……拝見します。（黙り込む）」',
+      sensei:'正解。主観には客観で殴れ。重要な実務知識——骨折は画像で治癒が判る。だが不眠・抑うつは本人の訴えが診断の根拠になる。「眠れない」「気力が湧かない」「働くのが難しい」と正直に伝えれば、医師は診断書を書く。診断書は最強の防具だ。' },
+    { label:'「受給に年齢要件はありません」', good:true, dmg:22,
+      result:'窓口の人「……それは、まあ、そうですが」',
+      sensei:'正しい。生活保護に年齢要件はない。若さは不支給の理由にならない。ただしこれだけでは“働けない証明”にはならない。診断書と組み合わせろ。' },
+    { label:'「頑張ります……もう少し探してみます」', good:false, self:32,
+      result:'窓口の人「ええ、その意気です。またお困りでしたら」',
+      sensei:'精神論に負けた。「頑張る」と言った瞬間、あなたは“就労可能”と記録される。窓口が最も欲しかった言葉を、自分から差し出した。' },
+  ]},
+
+  { type:'enemy', text:'窓口の人「ご家族には、頼れませんか？」', dmg:0 },
+  { type:'enemy', text:'窓口の人「申請となると、ご親族に扶養照会の連絡がいきますが……」', dmg:16,
+    sensei:'これが最も効く“脅し”だ。「家族に知られる」——この一言で申請を諦める人が非常に多い。窓口もそれを知っていて使う。だが、怯むな。' },
+  { type:'choice', q:'▼ 最凶の脅し。ここで退くな ▼', options:[
+    { label:'「扶養照会は困ります。申し出れば控えられるはずです」', good:true, dmg:28,
+      result:'窓口の人「……事情を伺ったうえで、検討します」',
+      sensei:'第一の手だ。厚労省は運用を見直し、申請者が困難を申し出た場合は照会を控える方向を示している（音信不通、関係悪化、DVなど）。ただし正直に言う——自治体によって運用にばらつきがあり、「拒否すれば必ず止まる」とまでは断言できない。だからこそ次の備えが要る。' },
+    { label:'「家族には話してあります。連絡が来ても断ってもらいます」', good:false, self:40, critical:true,
+      result:'窓口の人「……ほう。ご家族とは連絡が取れるのですね。（メモを取る）」',
+      sensei:'致命傷だ。今のは絶対に窓口で言ってはいけない。理由は二つ。①「連絡が取れる関係」だと自白した——照会を控える理由（音信不通・関係悪化）が消え、照会は確実に飛ぶ。②「断らせる」と言った瞬間、扶養義務者に虚偽の回答を促していると受け取られる。……ただし、備えとして家族に頼んでおくこと自体は極めて有効だ。扶養は義務ではなく、断られれば追及できない。つまり——やれ。だが、窓口で口にするな。腹の中に留めておけ。' },
+    { label:'「家族に知られるくらいなら……やめます」', good:false, self:999, surrender:true,
+      result:'窓口の人「そうですか。ではまたご相談ください」',
+      sensei:'窓口が最も望んだ結末だ。扶養照会は、こうやって申請そのものを断念させる装置として機能してきた。だがもう一度言う——扶養は義務ではない。断られれば終わりだ。恐れる必要は、なかった。' },
+  ]},
+
+  { type:'enemy', text:'窓口の人「貯金はおありですか？まだ資産があるのでは？」', dmg:10 },
+  { type:'enemy', text:'窓口の人「近年は不正受給も多く、審査は厳しくなっておりまして」', dmg:12,
+    sensei:'不正受給を持ち出して萎縮させる、典型的な圧のかけ方だ。数字を知っていれば、この攻撃は効かない。' },
+  { type:'choice', q:'▼ 数字を知る者は、怯まない ▼', options:[
+    { label:'「貯金は最低生活費の半分以下です。要件は満たしています」', good:true, dmg:26,
+      result:'窓口の人「……確認いたします」',
+      sensei:'正解。資産要件の目安は「手持ち金が最低生活費の半分以下」。数字を先に出せば探りは空振りに終わる。ただし覚えておけ——支給費の使い道は生活に必要なものに限られる。車の購入や借金返済に充てれば、不正受給として支給停止のトリガーになる。' },
+    { label:'「不正受給は全体の約2.4%です。疑う根拠にはなりません」', good:true, dmg:28,
+      result:'窓口の人「……（言葉に詰まる）」',
+      sensei:'見事だ。不正受給は全体のごく一部にすぎない。にもかかわらず、その印象だけが独り歩きし、本来受けるべき人を萎縮させている。統計を知ることは、そのまま防具になる。' },
+    { label:'「疑われるのは心外です！」（感情的になる）', good:false, self:20,
+      result:'窓口の人「落ち着いてください。……記録しておきますね」',
+      sensei:'感情的な反応は記録され、不利に働くことがある。怒りは正当だ。だが窓口では、常に冷静に、事実と法令だけで押せ。' },
+  ]},
+
+  { type:'enemy', text:'窓口の人「……本日はここまでとし、後日改めて」', dmg:14,
+    sensei:'最後の引き延ばしだ。ここで帰れば、また一からやり直しになる。切り札を切るのは、今だ。' },
+  { type:'choice', q:'▼ 切り札を切れ。今しかない ▼', options:[
+    { label:'「これまでの会話、すべて録音しています」', good:true, dmg:48,
+      result:'窓口の人「……！！（表情が凍りつく）……少々、お待ちください」',
+      sensei:'これが一番効く。「以後、録音します」は"これから"の話にすぎない。だが「これまでの会話を録音していた」と言えば——さっきの「相談ですね」も「書類が揃ってから」も、すべてもう記録の中にある。逃げ場がない。堂々と、静かに突きつけろ。' },
+    { label:'「次回は支援団体と弁護士に同行してもらいます」', good:true, dmg:42,
+      result:'窓口の人「……そこまで、なさらなくても」',
+      sensei:'一人で行くから追い返される。第三者の目が入るとわかった瞬間、役所は正規の手続きに戻る。無料で同行してくれる支援団体は実在する。同行支援は極めて有効だ。' },
+    { label:'「わかりました。また来ます」', good:false, self:999, surrender:true,
+      result:'窓口の人「はい、お待ちしております」',
+      sensei:'ここまで来て、最後に引いた。これが水際作戦の完成だ。だが申請権は消えていない。次は録音と第三者同行を用意して、必ず戻れ。' },
+  ]},
+];
+
 const keys={up:false,down:false,left:false,right:false};
 function bind(id,key){
   const b=document.getElementById(id);
@@ -123,10 +362,18 @@ function bind(id,key){
   b.addEventListener('pointerleave',()=>keys[key]=false);
 }
 bind('up','up'); bind('down','down'); bind('left','left'); bind('right','right');
-document.getElementById('talk').addEventListener('pointerdown',e=>{ e.preventDefault(); onTalk(); });
-canvas.addEventListener('pointerdown',()=>{ if(mode==='dialog'||mode==='battleIntro') onTalk(); });
+
+document.getElementById('talk').addEventListener('pointerdown',e=>{ e.preventDefault(); if(mode==='secret'){ secretTalk(); return; } onTalk(); });
+canvas.addEventListener('pointerdown',()=>{
+  if(mode==='dialog'){ onTalk(); return; }
+  if(mode==='battle' && turnPhase==='auto'){ scIndex++; playScene(); return; }
+  if(mode==='credits'){ startSecret(); return; }
+  if(mode==='losscredits'){ location.reload(); return; }
+  if(mode==='secret' && secretPhase==='dialog' && turnPhase==='auto'){ advanceSecret(); return; }
+});
 
 document.addEventListener('keydown',e=>{
+  if(mode==='battle') return; // バトル中は画面の選択肢をタップ
   if(e.key==='ArrowUp') keys.up=true;
   if(e.key==='ArrowDown') keys.down=true;
   if(e.key==='ArrowLeft') keys.left=true;
@@ -144,17 +391,153 @@ document.addEventListener('keyup',e=>{
 function nearClerk(){
   const dx=Math.abs(player.x-clerk.x);
   const dy=Math.abs(player.y-(clerk.y+clerk.h+34));
-  return dx<70 && dy<86;
+  return dx<70 && dy<130; // 奥にいても話しかけられるよう縦方向を広めに
 }
 function onTalk(){
   if(mode==='walk'){ if(nearClerk()){ mode='dialog'; dialogIndex=0; } }
-  else if(mode==='dialog'){ dialogIndex++; if(dialogIndex>=dialogLines.length){ mode='battleIntro'; frame=0; startBgm('battle'); } }
-  else if(mode==='battleIntro'){ mode='battle'; frame=0; }
+  else if(mode==='dialog'){ dialogIndex++; if(dialogIndex>=dialogLines.length){ mode='battleIntro'; frame=0; startBgm('battle'); setUIMode('battle'); choicesEl.innerHTML=''; showSensei(''); } }
+}
+
+
+// ===== 戦闘ロジック（オート進行＋要所で選択肢） =====
+function sfxHit(){ if(!actx) return; tone(160,0.12,'sawtooth',0.14); tone(90,0.16,'triangle',0.1); }
+function sfxDamage(){ if(!actx) return; tone(110,0.28,'sawtooth',0.15); }
+function sfxWin(){ if(!actx) return; const t=actx.currentTime; [523,659,784,1046].forEach((f,i)=>tone(f,0.28,'square',0.1,t+i*0.13)); }
+function sfxLose(){ if(!actx) return; const t=actx.currentTime; [392,349,311,261].forEach((f,i)=>tone(f,0.42,'triangle',0.12,t+i*0.24)); }
+// コントのオチ「チャンチャン」
+function sfxChanChan(){ if(!actx) return; const t=actx.currentTime;
+  tone(392,0.12,'square',0.12,t);
+  tone(392,0.22,'square',0.14,t+0.32);
+}
+function stopBgmSafe(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer=null; currentBgm=''; } }
+
+const battlePanel=document.getElementById('battlePanel');
+const mapPad=document.getElementById('mapPad');
+const mapHint=document.getElementById('mapHint');
+const choicesEl=document.getElementById('choices');
+const senseiBox=document.getElementById('senseiBox');
+const senseiTextEl=document.getElementById('senseiText');
+
+function setUIMode(m){
+  if(m==='battle'){ mapPad.style.display='none'; mapHint.style.display='none'; battlePanel.style.display='block'; }
+  else { mapPad.style.display='flex'; mapHint.style.display='block'; battlePanel.style.display='none'; }
+}
+function showSensei(text){
+  if(text){ senseiBox.style.display='block'; senseiTextEl.textContent=text; }
+  else { senseiBox.style.display='none'; }
+}
+function renderChoices(items){
+  choicesEl.innerHTML='';
+  items.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='choice'+(it.cls?(' '+it.cls):'');
+    b.textContent=it.label;
+    b.addEventListener('pointerdown',e=>{ e.preventDefault(); it.onTap(); });
+    choicesEl.appendChild(b);
+  });
+}
+function popDmg(text,color,side){ dmgPop={text,color,side,t:40}; }
+
+// バトル開始
+function startBattle(){
+  pHP=P_HPMAX; eHP=E_HPMAX; scIndex=0;
+  logLine=''; enemyLine=''; hasShindan=false; battleResult='';
+  turnPhase='auto';
+  setUIMode('battle');
+  playScene();
+}
+
+// 現在のシーンを再生
+function playScene(){
+  if(scIndex>=SCENARIO.length){ endBattle(eHP<=0?'win':'win'); return; }
+  const sc=SCENARIO[scIndex];
+
+  if(sc.type==='mono'){
+    logLine=sc.text; enemyLine='';
+    showSensei(sc.sensei||'');
+    turnPhase='auto';
+    renderChoices([]);
+    return;
+  }
+
+  if(sc.type==='enemy'){
+    logLine=''; enemyLine=sc.text;
+    if(sc.dmg && !(hasShindan && sc.psycho)){
+      pHP=Math.max(0,pHP-sc.dmg);
+      sfxDamage();
+      popDmg('-'+sc.dmg,'#ff4d6d','player');
+    }
+    showSensei(sc.sensei||'');
+    if(pHP<=0){ endBattle('lose'); return; }
+    turnPhase='auto';
+    renderChoices([]);
+    return;
+  }
+
+  if(sc.type==='choice'){
+    logLine=''; enemyLine=sc.q;
+    showSensei('');
+    turnPhase='choice';
+    renderChoices(sc.options.map(op=>({
+      label:op.label,
+      cls: op.good?'':'',
+      onTap:()=>pickChoice(op)
+    })));
+    return;
+  }
+}
+
+// 選択肢を選んだ
+function pickChoice(op){
+  logLine = '';
+  enemyLine = op.result;
+  critFlash = op.critical ? 30 : 0;
+
+  if(op.dmg){ eHP=Math.max(0,eHP-op.dmg); sfxHit(); popDmg('-'+op.dmg,'#ffe066','enemy'); }
+  if(op.self){
+    const d = op.surrender ? pHP : op.self;
+    pHP=Math.max(0,pHP-d);
+    sfxDamage();
+    popDmg(op.critical?('痛恨！ -'+op.self):('-'+d),'#ff4d6d','player');
+  }
+  if(op.guard) hasShindan=true;
+  showSensei(op.sensei||'');
+
+  if(op.surrender){ endBattle('surrender'); return; }
+  if(pHP<=0){ endBattle('lose'); return; }
+  if(eHP<=0){ endBattle('win'); return; }
+
+  turnPhase='auto';
+  renderChoices([]);  // ボタンは出さない。画面タップで進む
+}
+
+function endBattle(result){
+  turnPhase='over'; battleResult=result;
+  stopBgmSafe();
+  if(result==='win') sfxWin(); else sfxLose();
+
+  // 勝利 → エンドロールへ
+  if(result==='win'){
+    logLine=''; enemyLine='';
+    showSensei('');
+    renderChoices([{ label:'▶ エンドロールを見る', cls:'next', onTap:()=>{
+      mode='credits'; rollY=0; frame=0; choicesEl.innerHTML=''; showSensei(''); startBgm('win');
+    }}]);
+    return;
+  }
+
+  let msg;
+  if(result==='surrender'){
+    msg='あなたは、自分から降りた。これが水際作戦の完成だ。役所は一言も「却下」と言っていない。あなたが勝手に諦めただけ——書類上は、そうなる。だが申請権は消えていない。診断書・録音・第三者同行を用意して、必ず戻れ。';
+  } else {
+    msg='申請意志が折れた。これが水際作戦だ。追い返された人の多くは、二度と窓口に来ない。だが申請権は消えていない。診断書・録音・第三者同行を用意して、必ず戻れ。';
+  }
+  showSensei(msg);
+  renderChoices([{ label:'▶ もう一度 挑む', cls:'next', onTap:()=>{ startBgm('battle'); startBattle(); } }]);
 }
 
 function update(){
-  frame++;
-  if(mode!=='walk') return;
+  frame++;   if(mode!=='walk' && !(mode==='secret' && secretPhase==='map')) return;
   let dx=0,dy=0;
   if(keys.up){ dy=-player.speed; player.dir='up'; }
   if(keys.down){ dy=player.speed; player.dir='down'; }
@@ -163,10 +546,11 @@ function update(){
   player.moving=(dx!==0||dy!==0);
   player.x+=dx; player.y+=dy;
   player.x=Math.max(30,Math.min(W-30,player.x));
-  player.y=Math.max(176,Math.min(H-30,player.y));
+  player.y=Math.max(230,Math.min(H-30,player.y)); // 受付ラインより奥へは入れない
   if(player.moving){ player.stepTimer++; if(player.stepTimer>8){ player.step=(player.step+1)%2; player.stepTimer=0; } }
 }
 
+// ===== マップ描画 =====
 function drawFloor(){
   ctx.fillStyle=FLOOR_COLOR; ctx.fillRect(0,0,W,H);
   ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=1;
@@ -174,14 +558,16 @@ function drawFloor(){
   for(let y=0;y<=H;y+=TILE){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 }
 function drawHall(){
+  // 上の看板
   ctx.fillStyle='#5a6a80'; ctx.fillRect(0,0,W,44);
   ctx.fillStyle='#48566a'; ctx.fillRect(0,40,W,4);
   ctx.fillStyle='#fff'; ctx.font='bold 15px Courier New'; ctx.textAlign='center';
   ctx.fillText('キタ区役所  生活支援課  生活保護窓口',W/2,28); ctx.textAlign='left';
+  // 受付エリア（机は廃止、細いラインのみ・侵食されない）
   ctx.strokeStyle='#a06a3c'; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(50,176); ctx.lineTo(W-50,176); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(50,230); ctx.lineTo(W-50,230); ctx.stroke();
   ctx.fillStyle='#a06a3c'; ctx.font='bold 12px Courier New'; ctx.textAlign='center';
-  ctx.fillText('― 生活支援課 ―',W/2,196); ctx.textAlign='left';
+  ctx.fillText('― 生活支援課 ―',W/2,250); ctx.textAlign='left';
 }
 function drawClerkMap(){
   const c=clerk;
@@ -200,6 +586,7 @@ function drawPlayer(){
   ctx.save();
   ctx.translate(p.x,p.y);
   ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0,4,20,5,0,0,Math.PI*2); ctx.fill();
+  // 向きで絵を選ぶ
   let im=charaFront, flip=false;
   if(p.dir==='up') im=charaBack;
   else if(p.dir==='down') im=charaFront;
@@ -230,14 +617,17 @@ function drawDialog(){
   ctx.fillText('▶ タップで次へ',W-34,H-28); ctx.textAlign='left';
 }
 
+// ===== バトル描画（背景を絵と同化・敵を大きく） =====
 function drawBattleBG(){
   ctx.fillStyle=BATTLE_COLOR; ctx.fillRect(0,0,W,H);
+  // うっすら床の陰影だけ
   ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,H-60,W,60);
 }
 function drawBossBattle(scale,shakeY){
-  const bh=250*scale, bw=bh*0.95;
-  const bx=W/2-bw/2, by=H-40-bh+(shakeY||0);
-  ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.ellipse(W/2,H-40,bw*0.42,12*scale,0,0,Math.PI*2); ctx.fill();
+  const bh=340*scale, bw=bh*0.95;
+  const floorY = (mode==='battle') ? H-150 : H-40; // セリフ枠に被らないよう上げる
+  const bx=W/2-bw/2, by=floorY-bh+(shakeY||0);
+  ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.ellipse(W/2,floorY,bw*0.42,12*scale,0,0,Math.PI*2); ctx.fill();
   if(enemyBossImg.ready){ ctx.drawImage(enemyBossImg,bx,by,bw,bh); }
   else { ctx.fillStyle='#888'; ctx.fillRect(bx,by,bw,bh); }
 }
@@ -253,31 +643,437 @@ function draw(){
     const p=Math.min(1,frame/40);
     drawBossBattle(0.5+0.5*p,(1-p)*40);
     ctx.textAlign='center';
-    if(frame<40){
+    if(frame<50){
       ctx.fillStyle='#333'; ctx.font='bold 16px Courier New';
       if(frame%20<14) ctx.fillText('窓口の人 が たちはだかった！',W/2,40);
     } else {
       ctx.fillStyle='#c0304a'; ctx.font='bold 30px Courier New';
       if(frame%20<14) ctx.fillText('⚔ バトル開始！ ⚔',W/2,44);
-      ctx.fillStyle='#a06a20'; ctx.font='bold 12px Courier New';
-      ctx.fillText('タップで つづく…（デモはここまで）',W/2,H-14);
     }
     ctx.textAlign='left';
+    // 演出が終わったら自動でバトルへ
+    if(frame>90){ mode='battle'; frame=0; startBattle(); }
     return;
   }
+  if(mode==='credits'){ drawCredits(); return; }
+  if(mode==='losscredits'){ drawLossCredits(); return; }
+
+  if(mode==='secret'){
+    if(secretPhase==='map'){
+      drawFloor(); drawHall(); drawClerkMapSecret(); drawPlayer();
+      ctx.fillStyle='#b06cff'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('― 裏クエスト ―',W/2,H-10); ctx.textAlign='left';
+      return;
+    }
+    drawBattleBG();
+    drawLadyBattle();
+    if(critFlash>0){
+      critFlash--;
+      ctx.fillStyle='rgba(200,20,40,'+(critFlash/70*0.6)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+    drawDmgPop();
+    if(secretPhase==='over') drawArrest();
+    else drawSpeechBox();
+    return;
+  }
+
   if(mode==='battle'){
     drawBattleBG();
-    drawBossBattle(1,0);
-    ctx.fillStyle='rgba(20,8,26,0.92)'; ctx.fillRect(0,H-64,W,64);
-    ctx.strokeStyle='#b06cff'; ctx.lineWidth=2; ctx.strokeRect(0,H-64,W,64);
-    ctx.fillStyle='#fff'; ctx.font='bold 13px Courier New';
-    ctx.fillText('窓口の人「まずは、ご相談から……」',14,H-38);
-    ctx.fillStyle='#aaa'; ctx.font='bold 11px Courier New';
-    ctx.fillText('（コマンドバトルは次の回で実装します）',14,H-16);
+    drawBossBattle(0.70,0);
+    drawHPBars();
+    if(critFlash>0){
+      critFlash--;
+      ctx.fillStyle='rgba(200,20,40,'+(critFlash/30*0.5)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+    drawDmgPop();
+    if(turnPhase==='over') drawBattleOver();
+    else drawSpeechBox();
   }
 }
 
+// ダメージ数字のポップアップ
+function drawDmgPop(){
+  if(!dmgPop) return;
+  dmgPop.t--;
+  if(dmgPop.t<=0){ dmgPop=null; return; }
+  const rise=(40-dmgPop.t)*0.9;
+  const x = dmgPop.side==='enemy' ? W/2 : W-70;
+  const y = (dmgPop.side==='enemy' ? 150 : 70) - rise;
+  ctx.globalAlpha=Math.min(1,dmgPop.t/18);
+  ctx.textAlign='center';
+  ctx.font='bold 30px Courier New';
+  ctx.lineWidth=4; ctx.strokeStyle='#fff';
+  ctx.strokeText(dmgPop.text,x,y);
+  ctx.fillStyle=dmgPop.color;
+  ctx.fillText(dmgPop.text,x,y);
+  ctx.textAlign='left';
+  ctx.globalAlpha=1;
+}
+
+// ===== 戦闘UI =====
+function drawHPBars(){
+  // 敵HP（上）
+  ctx.fillStyle='#333'; ctx.font='bold 11px Courier New'; ctx.textAlign='left';
+  ctx.fillText('窓口の抵抗',12,16);
+  ctx.fillStyle='#ddd'; ctx.fillRect(12,20,180,10);
+  ctx.fillStyle= eHP>60?'#c0304a': eHP>25?'#e08a20':'#8a2030';
+  ctx.fillRect(12,20,180*(eHP/E_HPMAX),10);
+  ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.strokeRect(12,20,180,10);
+
+  // 自分HP（右上）
+  ctx.textAlign='right';
+  ctx.fillStyle='#333'; ctx.fillText('申請意志',W-12,16);
+  ctx.textAlign='left';
+  ctx.fillStyle='#ddd'; ctx.fillRect(W-192,20,180,10);
+  ctx.fillStyle= pHP>50?'#3a8a3a': pHP>25?'#c8a020':'#c03030';
+  ctx.fillRect(W-192,20,180*(pHP/P_HPMAX),10);
+  ctx.strokeStyle='#555'; ctx.strokeRect(W-192,20,180,10);
+
+  if(hasShindan){
+    ctx.fillStyle='#2a7ab0'; ctx.font='bold 10px Courier New';
+    ctx.fillText('🛡 診断書：精神論を無効化',W-192,44);
+  }
+}
+
+function drawSpeechBox(){
+  if(!logLine && !enemyLine) return;
+  const boxY=H-140, boxH=140;
+  // 枠
+  ctx.fillStyle='rgba(10,6,20,0.97)'; ctx.fillRect(0,boxY,W,boxH);
+  ctx.strokeStyle= (turnPhase==='choice') ? '#ff9a3c' : '#b06cff';
+  ctx.lineWidth=4; ctx.strokeRect(2,boxY+2,W-4,boxH-4);
+  ctx.textAlign='left';
+  let y=boxY+34;
+
+  if(logLine){
+    // モノローグ（主人公の心の声）
+    ctx.fillStyle='#c9b0ff'; ctx.font='bold 19px sans-serif';
+    y=wrapTextY(logLine,18,y,W-36,26)+8;
+  }
+  if(enemyLine){
+    // 選択肢の見出しか、窓口のセリフか
+    if(turnPhase==='choice'){
+      ctx.fillStyle='#ff9a3c'; ctx.font='bold 22px sans-serif';
+      ctx.textAlign='center';
+      wrapTextY(enemyLine,W/2,y+6,W-36,28);
+      ctx.textAlign='left';
+    } else {
+      ctx.fillStyle='#8fe3ff'; ctx.font='bold 20px sans-serif';
+      wrapTextY(enemyLine,18,y,W-36,27);
+    }
+  }
+  // 進行のヒント
+  if(turnPhase==='auto'){
+    ctx.fillStyle= (frame%50<32) ? '#ffe066' : 'rgba(255,224,102,0.25)';
+    ctx.font='bold 12px sans-serif'; ctx.textAlign='right';
+    ctx.fillText('▶ 画面をタップ',W-14,H-8); ctx.textAlign='left';
+  }
+}
+
+function drawBattleOver(){
+  ctx.fillStyle='rgba(0,0,0,0.82)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  if(battleResult==='win'){
+    ctx.fillStyle='#ffe066'; ctx.font='bold 30px Courier New';
+    ctx.fillText('🎉 申請書、受理！ 🎉',W/2,H/2-16);
+    ctx.fillStyle='#fff'; ctx.font='bold 14px Courier New';
+    ctx.fillText('窓口の人「……申請として受理いたします」',W/2,H/2+18);
+  } else {
+    ctx.fillStyle='#ff4d6d'; ctx.font='bold 26px Courier New';
+    ctx.fillText('申請意志が折れた……',W/2,H/2-16);
+    ctx.fillStyle='#fff'; ctx.font='bold 14px Courier New';
+    ctx.fillText('窓口の人「またご相談ください」',W/2,H/2+18);
+  }
+  ctx.fillStyle='#888'; ctx.font='bold 11px Courier New';
+  ctx.fillText('（デモはここまで）',W/2,H-20);
+  ctx.textAlign='left';
+}
+
+// 折り返して、次のy座標を返す
+function wrapTextY(text,x,y,maxW,lh){
+  const chars=[...text]; let line='', yy=y;
+  for(const ch of chars){
+    if(ctx.measureText(line+ch).width>maxW){ ctx.fillText(line,x,yy); line=ch; yy+=lh; }
+    else line+=ch;
+  }
+  if(line) { ctx.fillText(line,x,yy); yy+=lh; }
+  return yy;
+}
+
+// ===== 裏クエスト（マップから開始） =====
+function startSecret(){
+  mode='secret';
+  secretPhase='map'; secretDlgIndex=0; secretAngry=false;
+  logLine=''; enemyLine=''; critFlash=0; dmgPop=null;
+  // マップの初期位置に戻す
+  player.x=W/2; player.y=H-70; player.dir='up';
+  setUIMode('map');
+  startBgm('walk');
+}
+
+// 裏クエストで「はなす」を押した
+function secretTalk(){
+  if(secretPhase==='map'){
+    if(nearClerk()){
+      secretPhase='dialog'; secretDlgIndex=0;
+      setUIMode('battle');
+      startBgm('walk');
+      showSecretLine();
+    }
+    return;
+  }
+}
+function showSecretLine(){
+  const line=SECRET_DIALOG[secretDlgIndex];
+  if(line.startsWith('（')){ logLine=line; enemyLine=''; }
+  else { logLine=''; enemyLine=line; }
+  showSensei('');
+  turnPhase='auto';
+  renderChoices([]);
+}
+function advanceSecret(){
+  if(secretPhase!=='dialog') return;
+  secretDlgIndex++;
+  if(secretDlgIndex>=SECRET_DIALOG.length){
+    // 2択へ
+    secretPhase='choice';
+    logLine=''; enemyLine='▼ ……あなたは、何をする ▼';
+    turnPhase='choice';
+    renderChoices(SECRET_CHOICES.map(op=>({ label:op.label, onTap:()=>pickSecret(op) })));
+    return;
+  }
+  showSecretLine();
+}
+function pickSecret(op){
+  // どちらを選んでも、同じ結末
+  logLine=''; enemyLine=op.result;
+  secretAngry=true; critFlash=70;
+  pHP=0; sfxLose(); stopBgmSafe();
+  popDmg('-9999','#ff2040','player');
+  if(actx){ const t=actx.currentTime; [110,90,70,55].forEach((f,i)=>tone(f,0.5,'sawtooth',0.2,t+i*0.18)); }
+  secretPhase='over'; turnPhase='over'; battleResult='harass';
+  secretOverLine=op.over;
+  showSensei('');
+  renderChoices([{ label:'▶ …………', cls:'danger', onTap:()=>{
+    showSensei(SECRET_SENSEI);
+    renderChoices([{ label:'▶ ……それでも、あなたは', cls:'next', onTap:()=>{
+      mode='losscredits'; rollY=0; frame=0;
+      choicesEl.innerHTML=''; showSensei('');
+      startBgm('walk');
+    }}]);
+  }}]);
+}
+let secretOverLine='';
+let showLossCredits=false;
+let lossChanPlayed=false; // 敗北後のエンドロールに入ったか
+
+// ===== 敗北エンドロール：失ったもの／生活保護のデメリット =====
+const LOSS_CREDITS = [
+  {t:'—— 制度上、あなたが 受け入れたもの ——', big:true},
+  {t:''},
+  {t:'預貯金の上限', s:'目安は最低生活費の半分程度。自治体や担当者の解釈で厳しくなることも'},
+  {t:'大きな買い物の制限', s:'車・不動産は原則不可。ただし就労に不可欠等の正当な理由があれば特例も'},
+  {t:'資産・生活の申告', s:'収入の未申告は"不正受給"として即座にペナルティ対象になる'},
+  {t:'ケースワーカーの家庭訪問', s:'生活状況の監視と取られることもあるが、支援を受けるための義務'},
+  {t:'扶養照会の重さ', s:'親族への連絡が原則。DVや虐待、長年の疎遠なら回避の相談も可能'},
+  {t:'（逆に疎遠でないなら、先手を打つ手もある）'},
+  {t:'（役所からの連絡を"断ってほしい"と、親族に前もって頼んでおく）'},
+  {t:'手続きの心理戦', s:'書類作成に加え、長時間待たされ、繰り返し来庁させられる消耗戦'},
+  {t:''},
+  {t:'——————————————'},
+  {t:''},
+  {t:'これらは 制度を', big:true},
+  {t:'公平に保つための、', big:true},
+  {t:'当然の 仕組みだ。', big:true},
+  {t:''},
+  {t:'だが——'},
+  {t:''},
+  {t:'たとえ 審査に通っても、'},
+  {t:'たとえ 権利として 認められても、'},
+  {t:''},
+  {t:'一度失ったものは、', big:true},
+  {t:'戻らない。', big:true},
+  {t:''},
+  {t:'それは——'},
+  {t:''},
+  {t:'信 頼', big:true},
+  {t:''},
+  {t:''},
+  {t:'生活保護制度は、'},
+  {t:'知識武装で 勝ち取れる。'},
+  {t:''},
+  {t:'しかし お前のように'},
+  {t:'一時の 性欲に負けて'},
+  {t:'セクハラしてしまうような 奴に、'},
+  {t:'信頼は、勝ち取れないのだ。', big:true},
+  {t:''},
+  {t:''},
+  {t:'保護廃止通知書 を 受け取った。', big:true},
+  {t:''},
+  {t:'——————————————'},
+  {t:''},
+  {t:''},
+  {t:'市役所クエスト', big:true},
+  {t:'〜 生活保護申請 〜（裏）'},
+  {t:''},
+  {t:'企画・構成・監修'},
+  {t:'Hiroyuki先生', big:true},
+  {t:''},
+  {t:''},
+  {t:''},
+];
+
+
+
+// ===== エンドロール描画 =====
+function drawCredits(){
+  ctx.fillStyle='#0a0614'; ctx.fillRect(0,0,W,H);
+
+  // 主人公の笑顔（背景に大きく、うっすら）
+  if(charaFront.ready){
+    ctx.globalAlpha=0.30;
+    const ih=H*0.85, iw=ih*0.62;
+    ctx.drawImage(charaFront, W/2-iw/2, H-ih, iw, ih);
+    ctx.globalAlpha=1;
+  }
+  // 下から上へ流れる文字
+  rollY += 0.55;
+  ctx.textAlign='center';
+  let y = H + 40 - rollY;
+  for(const line of CREDITS){
+    if(y>-40 && y<H+40){
+      if(line.big){
+        ctx.fillStyle='#ffe066'; ctx.font='bold 22px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+      } else if(line.s){
+        ctx.fillStyle='#fff'; ctx.font='bold 17px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+        ctx.fillStyle='#7ad77a'; ctx.font='bold 15px sans-serif';
+        ctx.fillText(line.s, W/2, y+21);
+      } else {
+        ctx.fillStyle='#c9b0ff'; ctx.font='bold 16px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+      }
+    }
+    y += line.s ? 50 : (line.big ? 40 : 32);
+  }
+  ctx.textAlign='left';
+
+  // 流れ終わったら裏クエストへ
+  const total = CREDITS.reduce((a,l)=>a+(l.s?50:(l.big?40:32)),0);
+  if(rollY > total + H + 60){
+    startSecret();
+  }
+  // スキップ
+  ctx.fillStyle= (frame%50<32)?'#888':'rgba(136,136,136,0.3)';
+  ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
+  ctx.fillText('▶ タップでスキップ',W-12,H-10); ctx.textAlign='left';
+}
+
+// マップ上の美人職員（ドット絵）
+function drawClerkMapSecret(){
+  const c=clerk;
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(c.x,c.y+c.h,22,6,0,0,Math.PI*2); ctx.fill();
+  if(ladyMapImg.ready){ ctx.drawImage(ladyMapImg,c.x-c.w/2,c.y,c.w,c.h); }
+  else { ctx.fillStyle='#9aa8c0'; ctx.fillRect(c.x-c.w/2,c.y,c.w,c.h); }
+  if(nearClerk()){
+    ctx.fillStyle='#e04a2a'; ctx.font='bold 26px Courier New'; ctx.textAlign='center';
+    if(frame%40<26) ctx.fillText('!',c.x,c.y-22);
+    ctx.textAlign='left';
+  }
+}
+
+// ===== 敗北エンドロール（怒り顔を背景に、失ったものを流す） =====
+function drawLossCredits(){
+  ctx.fillStyle='#100608'; ctx.fillRect(0,0,W,H);
+
+  if(ladyAngryImg.ready){
+    ctx.globalAlpha=0.26;
+    const ih=H*0.85, iw=ih*0.62;
+    ctx.drawImage(ladyAngryImg, W/2-iw/2, H-ih, iw, ih);
+    ctx.globalAlpha=1;
+  }
+  rollY += 0.55;
+  ctx.textAlign='center';
+  let y = H + 40 - rollY;
+  for(const line of LOSS_CREDITS){
+    if(y>-40 && y<H+40){
+      if(line.big){
+        ctx.fillStyle='#ff6a7a'; ctx.font='bold 22px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+      } else if(line.s){
+        ctx.fillStyle='#eee'; ctx.font='bold 16px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+        ctx.fillStyle='#c98a8a'; ctx.font='bold 13px sans-serif';
+        ctx.fillText(line.s, W/2, y+20);
+      } else {
+        ctx.fillStyle='#d0a0b0'; ctx.font='bold 15px sans-serif';
+        ctx.fillText(line.t, W/2, y);
+      }
+    }
+    y += line.s ? 48 : (line.big ? 40 : 30);
+  }
+  ctx.textAlign='left';
+
+  const total = LOSS_CREDITS.reduce((a,l)=>a+(l.s?48:(l.big?40:30)),0);
+  if(rollY > total + H + 40){
+    if(!lossChanPlayed){ lossChanPlayed=true; stopBgmSafe(); sfxChanChan(); }
+    ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,H-70,W,70);
+    ctx.fillStyle='#fff'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('― THE END ―',W/2,H-40); ctx.textAlign='left';
+  }
+  ctx.fillStyle= (frame%50<32)?'#888':'rgba(136,136,136,0.3)';
+  ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
+  ctx.fillText('▶ タップで最初から',W-12,H-10); ctx.textAlign='left';
+}
+
+// ===== 裏クエスト：美人職員 =====
+function drawLadyBattle(){
+  const img = secretAngry ? ladyAngryImg : ladyBossImg;
+  const bh=380, bw=bh*0.78;
+  const bx=W/2-bw/2, by=H-150-bh+40;
+  ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.beginPath();
+  ctx.ellipse(W/2,H-146,bw*0.4,12,0,0,Math.PI*2); ctx.fill();
+  if(img && img.ready){ ctx.drawImage(img,bx,by,bw,bh); }
+  else {
+    ctx.fillStyle= secretAngry ? '#c04a5a' : '#9aa8c0';
+    ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#fff'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(secretAngry?'（激怒）':'窓口の職員',W/2,by+bh/2); ctx.textAlign='left';
+  }
+  // タイトル
+  ctx.fillStyle='#b06cff'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('― 裏クエスト ―',W/2,26); ctx.textAlign='left';
+}
+
+function drawArrest(){
+  ctx.fillStyle='rgba(0,0,0,0.88)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.fillStyle='#ff2040'; ctx.font='bold 56px sans-serif';
+  if(frame%16<11) ctx.fillText('9999',W/2,H/2-70);
+  ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif';
+  ctx.fillText('痛恨の 一撃！',W/2,H/2-26);
+  // 選んだ行動に応じたセリフ
+  ctx.fillStyle='#ff9a3c'; ctx.font='bold 15px sans-serif';
+  wrapCenter(secretOverLine, W/2, H/2+14, W-60, 22);
+  ctx.fillStyle='#888'; ctx.font='bold 14px sans-serif';
+  ctx.fillText('― GAME OVER ―',W/2,H/2+90);
+  ctx.textAlign='left';
+}
+function wrapCenter(text,cx,y,maxW,lh){
+  if(!text) return;
+  const chars=[...text]; let line='', yy=y;
+  for(const ch of chars){
+    if(ctx.measureText(line+ch).width>maxW){ ctx.fillText(line,cx,yy); line=ch; yy+=lh; }
+    else line+=ch;
+  }
+  if(line) ctx.fillText(line,cx,yy);
+}
+
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
+setUIMode('map');
 loop();
 </script>
 </body>
