@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>人生滅亡実験 アルコール by Hiroyuki先生</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body {
+    background:#0b0d14; color:#e8e8f0;
+    font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+    overflow-x:hidden; width:100%; touch-action:manipulation;
+  }
+  #splash {
+    position:fixed; inset:0; background:#0b0d14;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:999; transition:opacity 0.6s;
+  }
+  #splash .badge {
+    font-size:13px; color:#f0b94d; letter-spacing:2px; margin-bottom:14px;
+    border:1px solid #f0b94d; padding:4px 12px; border-radius:20px;
+  }
+  #splash h1 {
+    font-size:26px; text-align:center; line-height:1.5; padding:0 24px;
+    background:linear-gradient(90deg,#f0b94d,#e87a9a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #splash .sub { margin-top:10px; color:#8a8aa0; font-size:13px; }
+  #splash .desc {
+    margin-top:18px; font-size:12px; color:#7a7a90; text-align:center;
+    padding:0 30px; line-height:1.8;
+  }
+  #splash .start-btn {
+    margin-top:36px; padding:14px 40px; border-radius:30px;
+    background:#f0b94d; color:#0b0d14; font-weight:bold; font-size:16px; border:none;
+  }
+  #main { display:none; min-height:100vh; padding-bottom:40px; }
+  header { padding:16px 18px 10px; border-bottom:1px solid #1d2030; }
+  header .title { font-size:14px; color:#f0b94d; letter-spacing:1px; }
+  header .by { font-size:11px; color:#5a5a70; margin-top:2px; }
+  #age-bar {
+    text-align:center; padding:10px 16px 4px;
+    display:flex; align-items:baseline; justify-content:center; gap:6px;
+  }
+  #age-label { font-size:11px; color:#7a7a90; letter-spacing:2px; }
+  #age-value {
+    font-size:34px; font-weight:bold; letter-spacing:2px;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(90deg,#f0b94d,#e87a9a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #age-suffix { font-size:14px; color:#9a9ab0; }
+  #dashboard { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 16px; }
+  .stat-box { background:#13151f; border:1px solid #1d2030; border-radius:14px; padding:12px 14px; }
+  .stat-label { font-size:11px; color:#7a7a90; margin-bottom:4px; }
+  .stat-value { font-size:22px; font-weight:bold; }
+  .bar-track { margin-top:6px; height:5px; background:#262838; border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+  #stage-wrap {
+    margin:14px 16px; border-radius:16px; overflow:hidden;
+    border:1px solid #1d2030; background:#0e1019; position:relative;
+  }
+  #stage { width:100%; height:200px; display:block; background:#0e1019; }
+  #control {
+    margin:18px 16px; background:#13151f; border:1px solid #1d2030;
+    border-radius:14px; padding:16px 16px 18px;
+  }
+  #control .ctl-label {
+    display:flex; justify-content:space-between; font-size:13px; color:#cfcfe0; margin-bottom:8px;
+  }
+  #control .ctl-label span.val { color:#f0b94d; font-weight:bold; }
+  input[type=range] {
+    width:100%; height:6px; border-radius:3px; background:#262838;
+    -webkit-appearance:none; appearance:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+    background:#f0b94d; border:3px solid #0b0d14; box-shadow:0 0 0 2px #f0b94d;
+  }
+  #control .scale-row {
+    display:flex; justify-content:space-between; font-size:10px; color:#5a5a70; margin-top:6px;
+  }
+  #log-wrap {
+    margin:18px 16px 0; background:#13151f; border:1px solid #1d2030;
+    border-radius:14px; padding:11px 14px; min-height:20px;
+  }
+  #log-wrap .log-title { font-size:10px; color:#7a7a90; margin-bottom:4px; letter-spacing:1px; }
+  #log-list { font-size:13px; line-height:1.6; color:#cfcfe0; }
+  #log-list div { opacity:0; animation:fadein 0.5s forwards; }
+  #log-list div.warn { color:#e87a9a; }
+  @keyframes fadein { to { opacity:1; } }
+  #egg {
+    margin:18px 16px 30px; padding:14px; border-radius:14px;
+    background:#13151f; border:1px dashed #2a2d40; font-size:12px; color:#6a6a80;
+    text-align:center;
+  }
+  #danger-frame {
+    position:fixed; inset:0; pointer-events:none; z-index:500;
+    border:0px solid rgba(232,60,60,0); transition:border-width 0.3s, border-color 0.3s;
+  }
+  #danger-frame.active {
+    border-width:8px; border-color:rgba(232,60,60,0.55);
+    animation:dangerPulse 0.9s infinite;
+  }
+  @keyframes dangerPulse {
+    0%,100% { border-color:rgba(232,60,60,0.25); }
+    50% { border-color:rgba(232,60,60,0.7); }
+  }
+  body.shake { animation:shakeAnim 0.4s infinite; }
+  @keyframes shakeAnim {
+    0%,100% { transform:translate(0,0); }
+    25% { transform:translate(-2px,1px); }
+    50% { transform:translate(2px,-1px); }
+    75% { transform:translate(-1px,-2px); }
+  }
+  #mute-btn {
+    position:fixed; top:14px; right:14px; z-index:600;
+    width:38px; height:38px; border-radius:50%;
+    background:#13151f; border:1px solid #2a2d40; color:#cfcfe0; font-size:15px;
+  }
+  /* 透析ショック説明文 */
+  #shock-overlay {
+    position:fixed; left:0; right:0; top:34%; z-index:700;
+    pointer-events:none; text-align:center; padding:0 20px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  #shock-overlay .shock-line {
+    display:inline-block;
+    font-size:17px; font-weight:bold; color:#ff5252;
+    line-height:1.6; padding:10px 18px; max-width:340px;
+    background:rgba(8,8,12,0.88);
+    border:1px solid rgba(255,82,82,0.5);
+    border-radius:10px;
+    opacity:0;
+    box-shadow:0 4px 20px rgba(0,0,0,0.7);
+    transition:opacity 0.6s;
+    animation:shockIn 0.6s forwards;
+  }
+  @keyframes shockIn {
+    0% { opacity:0; transform:translateY(-8px) scale(1.08); }
+    100% { opacity:1; transform:translateY(0) scale(1); }
+  }
+  /* 人生イベントの幕 */
+  #curtain {
+    position:fixed; inset:0; background:#000; z-index:800;
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    text-align:center; padding:30px; opacity:0; transition:opacity 0.8s;
+  }
+  #curtain.show { display:flex; }
+  #curtain.visible { opacity:1; }
+  #curtain .ev-icon { font-size:52px; margin-bottom:16px; }
+  #curtain .ev-age { font-size:13px; color:#7a7a90; letter-spacing:2px; margin-bottom:10px; }
+  #curtain h3 { font-size:20px; color:#f0e8d8; margin-bottom:14px; letter-spacing:1px; }
+  #curtain p { font-size:13.5px; color:#9a9ab0; line-height:2; max-width:320px; }
+  #curtain button {
+    margin-top:28px; padding:12px 32px; border-radius:30px; background:#1d2030;
+    color:#cfcfe0; border:1px solid #2a2d40; font-size:13px;
+  }
+  /* エンディング */
+  #ending {
+    position:fixed; inset:0; background:#000; z-index:900;
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    text-align:center; padding:30px;
+  }
+  #ending.show { display:flex; animation:fadein 2.5s forwards; }
+  #ending h2 { font-size:18px; margin-bottom:18px; letter-spacing:1px; }
+  #ending h2.bad { color:#e87a9a; }
+  #ending h2.good { color:#7be38a; }
+  #ending p { font-size:13.5px; color:#9a9ab0; line-height:2; max-width:320px; }
+  #ending button {
+    margin-top:30px; padding:12px 30px; border-radius:30px; background:#1d2030;
+    color:#cfcfe0; border:1px solid #2a2d40; font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<div id="danger-frame"></div>
+<div id="shock-overlay"></div>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
+
+<div id="curtain">
+  <div class="ev-icon" id="ev-icon">🎉</div>
+  <div class="ev-age" id="ev-age"></div>
+  <h3 id="ev-title"></h3>
+  <p id="ev-text"></p>
+  <button onclick="closeCurtain()">人生を続ける</button>
+</div>
+
+<div id="ending">
+  <h2 id="ending-title">GAME OVER</h2>
+  <p id="ending-text"></p>
+  <button onclick="resetGame(); document.getElementById('ending').classList.remove('show');">もう一度、18歳から</button>
+</div>
+
+<div id="splash">
+  <div class="badge">🍺 LIFE SIMULATION</div>
+  <h1>人生滅亡実験<br>『アルコール』</h1>
+  <div class="sub">by Hiroyuki先生</div>
+  <div class="desc">
+    あなたは18歳。今日から人生が始まる。<br>
+    仕事、結婚、育児。ストレスは勝手に増えていく。<br>
+    酒と食で紛らわすか、耐えるか。さあ、何歳まで——。
+  </div>
+  <button class="start-btn" onclick="startGame()">人生を開始する</button>
+</div>
+
+<div id="main">
+  <header>
+    <div class="title">🍺 人生滅亡実験『アルコール』</div>
+    <div class="by">by Hiroyuki先生</div>
+  </header>
+
+  <div id="age-bar">
+    <span id="age-label">年齢</span>
+    <span id="age-value">18</span>
+    <span id="age-suffix">歳</span>
+  </div>
+
+  <div id="dashboard">
+    <div class="stat-box">
+      <div class="stat-label">幸福度</div>
+      <div class="stat-value" id="val-happy" style="color:#f0b94d;">50</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-happy" style="background:#f0b94d;width:50%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">健康度</div>
+      <div class="stat-value" id="val-health" style="color:#7be38a;">100</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-health" style="background:#7be38a;width:100%"></div></div>
+    </div>
+    <div class="stat-box" style="grid-column:1/3;">
+      <div class="stat-label">ストレス</div>
+      <div class="stat-value" id="val-stress" style="color:#9a7bd8;">20</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-stress" style="background:#9a7bd8;width:20%"></div></div>
+    </div>
+  </div>
+
+  <div id="stage-wrap">
+    <canvas id="stage"></canvas>
+  </div>
+
+  <div id="control">
+    <div class="ctl-label"><span>飲酒・過食</span><span class="val" id="slider-val">0</span></div>
+    <input type="range" id="alcohol-slider" min="0" max="100" value="0">
+    <div class="scale-row"><span>節制する</span><span>暴飲暴食</span></div>
+  </div>
+
+  <div id="log-wrap">
+    <div class="log-title">人生ログ</div>
+    <div id="log-list"></div>
+  </div>
+
+  <div id="egg" onclick="showEgg()">
+    <span id="egg-text">タップして本日の格言</span>
+  </div>
+</div>
+
+<script>
+/* ===================== 音響 ===================== */
+let audioCtx = null;
+let droneGain = null;
+let droneOscs = [];        // 3音のコード
+let muted = false;
+let currentMood = 'bright'; // 'bright'(明るい) / 'dark'(暗い)
+let moodLockedDark = false;  // 一度でも不幸が起きたら暗いBGMのまま二度と戻らない
+
+// 明るいコード（高めのCメジャー＝ポップで明るい）と暗いコード（低く沈んだ短調）
+const chordBright = [261.6, 329.6, 392.0]; // C4, E4, G4（明るく開けた響き）
+const chordDark   = [98.0, 116.5, 138.6];  // G2, A#2, C#3（低く陰鬱）
+// 明るいとき用の軽やかなアルペジオ音階（Cメジャーペンタトニック）
+const arpNotes = [523.3, 587.3, 659.3, 784.0, 880.0]; // C5 D5 E5 G5 A5
+let arpTimer = null;
+
+function initAudio(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.05;
+  droneGain.connect(audioCtx.destination);
+  const chord = chordBright;
+  droneOscs = chord.map(freq=>{
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle'; // sineより少し倍音があり、明るくポップに聞こえる
+    osc.frequency.value = freq;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.28;
+    osc.connect(g); g.connect(droneGain);
+    osc.start();
+    return { osc, g };
+  });
+  currentMood = 'bright';
+  startArpeggio(); // 明るいポップなアルペジオを開始
+}
+
+// 明るいときの軽やかなアルペジオ（ポン、ポンと単音が跳ねる）
+function playArpNote(){
+  if (!audioCtx || muted || currentMood !== 'bright') return;
+  const freq = arpNotes[Math.floor(Math.random()*arpNotes.length)];
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  gain.gain.value = 0.0001;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  osc.start(now);
+  gain.gain.linearRampToValueAtTime(0.05, now + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+  osc.stop(now + 0.55);
+}
+function startArpeggio(){
+  if (arpTimer) return;
+  arpTimer = setInterval(playArpNote, 620); // 軽快なテンポで単音が跳ねる
+}
+function stopArpeggio(){
+  if (arpTimer){ clearInterval(arpTimer); arpTimer = null; }
+}
+
+// BGMの雰囲気を切り替える（bright / dark）
+function setMood(mood){
+  if (!audioCtx || mood === currentMood) return;
+  currentMood = mood;
+  const chord = (mood === 'bright') ? chordBright : chordDark;
+  const now = audioCtx.currentTime;
+  droneOscs.forEach((o, i)=>{
+    o.osc.frequency.exponentialRampToValueAtTime(chord[i], now + 1.5); // ゆっくり変化
+    // 暗いときは低音ドローンらしくsine、明るいときはtriangle
+    o.osc.type = (mood === 'bright') ? 'triangle' : 'sine';
+  });
+  if (mood === 'bright') startArpeggio();
+  else stopArpeggio(); // 暗くなったらポップなアルペジオを止める
+}
+
+function setDroneIntensity(level){
+  if (!audioCtx || muted) return;
+  // 危機が高いほど音量をやや上げる（緊張感）
+  droneGain.gain.value = (muted ? 0 : 0.05) + level*0.03;
+}
+function playBeep(freq=520, duration=0.15, vol=0.06){
+  if (!audioCtx || muted) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square'; osc.frequency.value = freq;
+  gain.gain.value = vol;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.stop(audioCtx.currentTime + duration + 0.02);
+}
+function playChime(){
+  if (!audioCtx || muted) return;
+  [523, 659, 784].forEach((f, i)=>{
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = f;
+    gain.gain.value = 0.06;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime + i*0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.12 + 0.5);
+    osc.stop(audioCtx.currentTime + i*0.12 + 0.55);
+  });
+}
+function playEndTone(){
+  if (!audioCtx || muted) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine'; osc.frequency.value = 220;
+  gain.gain.value = 0.0001;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 1.5);
+  osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 4);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 5);
+  osc.stop(audioCtx.currentTime + 5.2);
+}
+function toggleMute(){
+  muted = !muted;
+  document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+  if (droneGain) droneGain.gain.value = muted ? 0 : 0.05;
+}
+
+/* ===================== キャンバス ===================== */
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = 200 * devicePixelRatio;
+  canvas.style.height = '200px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+
+/* ===================== 状態 ===================== */
+let alcohol = 0;         // 0-100 飲酒・過食の度合い
+let happiness = 50;      // 幸福度
+let health = 100;        // 健康度
+let stress = 20;         // ストレス（高いと節制で幸福減、暴走でレバーが右へ）
+let bloodSugar = 30;     // 血糖ダメージの蓄積（過食で上昇→糖尿病→糖尿病性腎症）
+let age = 18;
+let ageAccumulator = 0;
+let tick = 0;
+let running = false;
+let paused = false;      // 幕(イベント)中は停止
+let ended = false;
+let firedEvents = {};    // 発生済みイベント記録
+let cirrhosis = false;   // 肝硬変フラグ（幸福度に上限）
+let diabetes = false;    // 糖尿病フラグ
+let dialysis = false;    // 人工透析フラグ（幸福度ゼロへ・酒操作不能）
+let dialysisAge = null;  // 透析導入時の年齢（10年でゲームオーバー）
+let dialysisMsgTimer = 0;// 透析の説明文を次々出すためのタイマー
+let dialysisMsgIndex = 0;
+let stressForcing = false; // ストレス暴走でレバーが右へ引っ張られている状態
+let depression = false;    // 鬱状態（幸福度上限＋健康回復なし、ストレス低下で寛解）
+let depressionCooldown = 0; // 寛解後の再発防止期間（この間は鬱にならない）
+let depressionOvercome = false; // 一度寛解したら二度と鬱にならない（ループ防止＋物語性）
+
+/* ===================== 人生イベント定義 ===================== */
+// 平均年齢は厚労省 令和6年人口動態統計に基づく
+// (平均初婚年齢: 夫31.1歳 / 第1子出生時の母平均: 31.0歳)
+const lifeEvents = [
+  { id:'job', ageAt:23, icon:'💼', title:'就職',
+    text:'大学を出て、社会人になった。残業、上司、終わらないタスク。歓迎会で注がれた一杯から、あなたと「逃避」の付き合いが始まる。',
+    stressUp:25 },
+  { id:'marriage', ageAt:31, icon:'💒', title:'結婚',
+    text:'平均初婚年齢31歳、あなたは今日、人生の伴侶と出会い誓いを立てた。幸せだ。ただ、守るものが増えるほど、背負うものも増えていく。',
+    condition:()=>health>=40, stressDown:15 },
+  { id:'child', ageAt:33, icon:'👶', title:'第一子誕生',
+    text:'小さな手があなたの指を握った。睡眠不足、夜泣き、増える出費。「この子のために」——その重圧もまた、静かに積もっていく。',
+    condition:()=>firedEvents['marriage'], stressUp:30 },
+  { id:'checkup', ageAt:45, icon:'🏥', title:'健康診断',
+    text:'数値に医師が眉をひそめる。「お酒も食事も、少し減らせますか？」あなたは「はい」と答えた。答えただけだった。',
+    condition:()=>health<70 },
+];
+
+// 健康度に応じて発生するネガティブイベント（年齢不問、閾値で発動）
+const healthEvents = [
+  { id:'liver', threshold:45, icon:'🫀', title:'肝硬変の告知',
+    text:'「肝臓がかなり硬くなっています。今すぐ断酒を」——医師の声が遠くに聞こえる。まだ引き返せる。まだ。' },
+  { id:'dialysis', threshold:25, icon:'⚠️', title:'人工透析導入',
+    text:'週3回、1回4時間。機械に血を通す生活が始まった。あの頃の「もう一杯」「もう一皿」の総額が、いま身体に請求されている。' },
+];
+
+// 血糖ダメージに応じて発生する糖尿病ルートのイベント
+const sugarEvents = [
+  { id:'diabetes', threshold:60, icon:'🍰', title:'糖尿病の診断',
+    text:'HbA1cが基準を大きく超えた。「糖尿病です。食生活を変えないと、腎臓や目に来ますよ」。だが忙しい毎日で、食事だけはご褒美だった。' },
+  { id:'nephropathy', threshold:82, icon:'🩸', title:'糖尿病性腎症',
+    text:'高血糖が腎臓の細い血管を蝕んだ。糖尿病性腎症——実は、人工透析になる原因の第1位がこれだ（約4割）。腎臓のろ過機能が、静かに壊れていく。' },
+];
+
+/* ===================== ログ ===================== */
+const logsSober = [
+  "今日も素面。夜のジョギングが気持ちいい",
+  "同僚の誘いを断って、家で本を読んだ",
+  "飲み会を断るのにも、もう慣れた",
+  "健康診断の数値がきれいで医者に褒められた",
+];
+const logsModerate = [
+  "仕事終わりの一杯が、今日もうまい",
+  "友人と飲む酒は、なぜこんなに楽しいのか",
+  "晩酌しながら見る野球が最高だ",
+  "「ほどほどにね」と家族に言われて笑った",
+];
+const logsHeavy = [
+  "記憶がない。財布もない。駅で寝ていた",
+  "「昨日のこと覚えてる？」と聞かれて凍った",
+  "迎え酒という発明を、今日も使ってしまった",
+  "手が少し震える。気のせいだと思いたい",
+  "家族の視線が冷たい。でも今日も開けてしまう",
+  "健診の再検査通知を、見なかったことにした",
+  "締めのラーメン。深夜のスナック菓子。止まらない",
+  "ストレスで甘い物が止まらない。自分へのご褒美だ",
+  "ズボンのボタンが留まらない。ワンサイズ上を買った",
+  "『無機リンたっぷりの美味い加工食品』が今日も友だ",
+];
+// 糖尿病診断後のログ
+const logsDiabetes = [
+  "喉が渇く。トイレが近い。でも食事は減らせない",
+  "足先の感覚が鈍い。しびれる日が増えた",
+  "「食事療法を」と言われたが、ご褒美だけは譲れない",
+  "健康な食事は高くつく。ジャンクの方が安くて早い",
+  "数値は悪いのに、今日も間食してしまった",
+];
+// 鬱状態のログ
+const logsDepression = [
+  "朝、布団から出られない。理由はわからない",
+  "何を食べても味がしない。楽しいはずのことも",
+  "人に会うのが億劫で、誘いを全部断った",
+  "頭に霧がかかったよう。何も考えられない",
+  "「頑張れ」が一番きつい言葉だと知った",
+  "逃げるように、また一杯。それしか手がない",
+];
+// 肝硬変告知後のログ（症状ベース）
+const logsCirrhosis = [
+  "白目が黄色い。黄疸だと言われた",
+  "足がむくんで、靴が入らない日がある",
+  "腹に水が溜まる（腹水）。お腹だけ膨れてきた",
+  "少しぶつけただけで、青あざが広がる",
+  "疲れが抜けない。一日中だるい",
+  "医者に「次に出血したら危ない」と言われた",
+  "それでも、まだ「一杯だけ」と思う自分がいる",
+];
+// 人工透析後のログ
+const logsDialysis = [
+  "週3回・1日5時間、機械に拘束される",
+  "喉が渇いてたまらない。でも水は飲めない",
+  "氷を口に含んで、渇きに耐えるしかない",
+  "腕のシャント瘤を、夏でも長袖で隠す",
+  "「二度見」されるのが、もう当たり前になった",
+];
+// 透析導入時に次々表示して慌てさせる説明文
+const dialysisShockMsgs = [
+  "お酒は、もう二度と飲めない。",
+  "喉が渇いても、水すら自由に飲めない。",
+  "氷を口に入れて、渇きに耐える日々。",
+  "週3回、1日5時間。人生が機械に縛られる。",
+  "腕にはシャント瘤というコブがいくつもできた。",
+  "夏でも長袖。他人の視線から腕を隠す。",
+  "「好きに飲み食いして、負担はたった1万円」",
+  "「あとは全部、俺たちの保険料だ。ふざけるな」",
+  "見知らぬ健常者から、そんな言葉を浴びせられる。",
+  "残された道は、腎臓移植を待つことだけ。",
+];
+
+const eggLines = [
+  "酒は百薬の長、されど万病のもと。どっちだよ。",
+  "「今日だけ」を毎日言うと、それは「毎日」という。",
+  "適量とは、飲む前に決めた量。飲んでから決めた量ではない。",
+  "ひろゆき先生「酒に飲まれるって言うけど、飲んでるのは自分ですよね」",
+  "「酒は百薬の長」は大嘘。約2000年前、新の皇帝・王莽（おうもう）が酒税を集めるために作らせた宣伝文句だ。",
+  "なぜ「百薬の長」は生き残ったか。飲む人の罪悪感を消し、酒造メーカーを潤し、政府は酒税と献金を得る——皆に都合が良かったからだ。",
+];
+
+/* ===================== メインループ ===================== */
+function updateSimulation(){
+  if (paused || ended) return;
+  tick++;
+
+  // 年齢進行（約100ティックで1歳 = 数秒で1歳）
+  ageAccumulator++;
+  if (ageAccumulator >= 100){
+    ageAccumulator = 0;
+    age++;
+    document.getElementById('age-value').textContent = age;
+    checkLifeEvents();
+  }
+
+  const a = alcohol / 100;
+
+  // ===== ストレス =====
+  // 加齢とともにじわじわ蓄積（働き盛りは特に）。飲酒・過食で一時的に解消される（だから逃避する）
+  if (age >= 23 && age < 60) stress += 0.016; // 現役世代は自然に溜まる
+  else stress += 0.006;
+  stress -= a * 0.045; // 飲酒・過食でストレス発散（右に振るほど下がる）
+  if (depression) stress -= 0.010; // 鬱＝療養中はストレス源から離れられ、少しずつ下がる余地がある
+  stress = Math.max(0, Math.min(100, stress));
+
+  // ストレスが高いと、レバーが勝手に右へ引っ張られる（意志で抑えきれない逃避）
+  if (stress > 60){
+    stressForcing = true;
+    const pull = (stress - 60) / 40; // 60超で徐々に、100で最大
+    alcohol = Math.min(100, alcohol + pull * 0.6);
+    const slider = document.getElementById('alcohol-slider');
+    if (!slider.disabled){
+      slider.value = alcohol;
+      document.getElementById('slider-val').textContent = Math.round(alcohol);
+    }
+  } else {
+    stressForcing = false;
+  }
+
+  // ===== 鬱の発症・寛解 =====
+  // 発症：ストレス72以上 or 幸福度25未満。ただし一度克服したら二度と発症しない（ループ防止＋物語性）
+  if (!depression && !depressionOvercome && age > 22 && (stress >= 72 || happiness < 25)){
+    depression = true;
+    openCurtain('🌧️', `${age}歳`, '心が折れた（鬱）',
+      'ある朝、身体が動かなくなった。何をしても楽しくない。医師の診断は「うつ病」。' +
+      '——気力が湧かず、逃避だけが手放せない。心を軽くしないかぎり、この霧は晴れない。', false);
+  } else if (depression && stress < 45 && happiness >= 33){
+    // 寛解：一度抜けたら「克服」フラグが立ち、以降は二度と鬱にならない
+    depression = false;
+    depressionOvercome = true;
+    openCurtain('🌈', `${age}歳`, '寛解',
+      '長いトンネルを、ようやく抜けた。心の重荷を下ろせたことで、少しずつ光が戻ってきた。' +
+      'あの頃の自分には、もう戻らない。当たり前の毎日が、こんなにありがたいものだったとは。', true);
+  }
+
+  // ===== 血糖ダメージ（過食＝レバー右で蓄積、糖尿病→糖尿病性腎症へ）=====
+  if (a > 0.4){
+    bloodSugar += (a - 0.4) * 0.09; // 食べすぎ・飲みすぎで血糖ダメージ蓄積
+  } else {
+    bloodSugar -= 0.02; // 節制すれば少し戻る
+  }
+  bloodSugar = Math.max(0, Math.min(100, bloodSugar));
+
+  // 幸福度：飲まなさすぎ(0-15)も下がる／適度(15-60)で上がる／飲みすぎ(60-)で下がる
+  // ※「酒レバーを一切いじらない傍観プレイ」を防ぐため、ゼロ地点を最適解にしない
+  let targetHappy;
+  if (a < 0.15){
+    // 全く飲まない〜ごく少量：じわじわ下がる（社交も息抜きもない味気なさ）
+    targetHappy = 55 - (0.15 - a)/0.15 * 20; // a=0で35、a=0.15で55
+  } else if (a <= 0.60){
+    // 適度な範囲：ここが幸福のピーク帯
+    targetHappy = 55 + (a - 0.15)/0.45 * 30; // a=0.15で55 → a=0.60で85(ピーク)
+  } else {
+    // 飲みすぎ：下降
+    targetHappy = 85 - (a - 0.60)/0.40 * 60; // a=0.60で85 → a=1.0で25
+  }
+  // 健康悪化も幸福度を蝕む
+  if (health < 50) targetHappy -= (50-health)*0.4;
+
+  // ストレスが高いのに節制(レバー左)していると、我慢の反動で幸福度が下がる
+  // → 「節制はノーコスト」ではない。ストレス社会では我慢し続けられない現実
+  if (stress > 50 && a < 0.4){
+    targetHappy -= (stress - 50) * (0.4 - a) * 1.2;
+  }
+  // ストレスそのものも幸福度をじわり下げる
+  targetHappy -= stress * 0.12;
+
+  // 肝硬変告知後：幸福度に上限。もう心から楽しめない
+  if (cirrhosis) targetHappy = Math.min(targetHappy, 40);
+  // 鬱状態：幸福度に上限。何をしても晴れない（ただし寛解ライン33より上に設定し、抜け出す余地を残す）
+  if (depression) targetHappy = Math.min(targetHappy, 38);
+  // 人工透析導入後：幸福度は急激にゼロへ向かう
+  if (dialysis) targetHappy = 0;
+
+  const happyLerp = dialysis ? 0.08 : 0.03; // 透析後は急激に下降
+  happiness += (targetHappy - happiness) * happyLerp;
+  happiness = Math.max(0, Math.min(100, happiness));
+
+  // 健康度：飲酒量に応じて削れる。適量(35以下)なら維持できる
+  if (dialysis){
+    // 透析導入後は透析で生命維持されるため健康はほぼ横ばい（10年カウントで最期を迎える）
+    health = Math.max(8, health);
+  } else if (a <= 0.35){
+    // 節制すれば微回復。ただし鬱の間は不摂生が固定化し、回復しない
+    const recover = 0.015 - a*0.04;
+    health += depression ? Math.min(0, recover) : recover;
+  } else {
+    health -= (a-0.35) * 0.13; // 適量を超えると加速度的に悪化
+  }
+  // 加齢による自然減
+  if (age > 40) health -= 0.004;
+  // 血糖ダメージが高いと健康がさらに削れる（糖尿病の全身への影響）
+  if (!dialysis && bloodSugar > 60){
+    health -= (bloodSugar - 60) * 0.004;
+  }
+  health = Math.max(0, Math.min(100, health));
+
+  // 糖尿病ルートのイベント判定（血糖ダメージベース）
+  sugarEvents.forEach(ev=>{
+    if (!firedEvents[ev.id] && bloodSugar >= ev.threshold){
+      firedEvents[ev.id] = true;
+      if (ev.id === 'diabetes'){
+        diabetes = true;
+        openCurtain(ev.icon, `${age}歳`, ev.title, ev.text, false);
+      } else if (ev.id === 'nephropathy'){
+        // 糖尿病性腎症 → そのまま人工透析に合流（透析の原因第1位）
+        if (!dialysis){
+          dialysis = true;
+          dialysisAge = age;
+          dialysisMsgIndex = 0;
+          dialysisMsgTimer = 0;
+          const slider = document.getElementById('alcohol-slider');
+          slider.disabled = true;
+          slider.style.opacity = '0.35';
+          firedEvents['dialysis'] = true;
+        }
+        openCurtain(ev.icon, `${age}歳`, ev.title, ev.text, false);
+      }
+    }
+  });
+
+  // 健康イベント判定
+  healthEvents.forEach(ev=>{
+    if (!firedEvents[ev.id] && health <= ev.threshold){
+      firedEvents[ev.id] = true;
+      if (ev.id === 'liver'){
+        cirrhosis = true; // 以降、幸福度に上限がかかる
+        openCurtain(ev.icon, `${age}歳`, ev.title, ev.text, false);
+      } else if (ev.id === 'dialysis'){
+        dialysis = true;
+        dialysisAge = age;      // ここから10年でゲームオーバー
+        dialysisMsgIndex = 0;
+        dialysisMsgTimer = 0;
+        // 飲酒スライダーを操作不能にする
+        const slider = document.getElementById('alcohol-slider');
+        slider.disabled = true;
+        slider.style.opacity = '0.35';
+        openCurtain(ev.icon, `${age}歳`, ev.title, ev.text, false);
+      }
+    }
+  });
+
+  // 透析導入後：飲酒量を強制的にゼロへ下げる
+  if (dialysis && alcohol > 0){
+    alcohol = Math.max(0, alcohol - 0.6);
+    document.getElementById('alcohol-slider').value = alcohol;
+    document.getElementById('slider-val').textContent = Math.round(alcohol);
+  }
+
+  // 透析導入後：説明文を次々と表示してプレイヤーを慌てさせる（しっかり読める間隔で）
+  if (dialysis && dialysisMsgIndex < dialysisShockMsgs.length){
+    dialysisMsgTimer++;
+    if (dialysisMsgTimer >= 75){ // 約1.7秒ごとに1文ずつ、じっくり畳みかける
+      dialysisMsgTimer = 0;
+      showShockMsg(dialysisShockMsgs[dialysisMsgIndex]);
+      dialysisMsgIndex++;
+    }
+  }
+
+  // 透析導入から10年経過でゲームオーバー
+  if (dialysis && dialysisAge !== null && age >= dialysisAge + 10 && !ended){
+    endGame(false,
+      `透析を続けて10年。${age}歳。` +
+      "腎臓移植の順番は、ついに回ってこなかった。" +
+      "自由に飲み、自由に食べたあの日々の代償を、身体は最後まで払い続けた。" +
+      "「もう一杯」は、こんなにも高くついた。", 'dialysis');
+  }
+
+  // 危険演出
+  const dangerFrame = document.getElementById('danger-frame');
+  if (health < 30 && health > 0){
+    dangerFrame.classList.add('active');
+    document.body.classList.add('shake');
+    if (tick % 90 === 0) playBeep();
+  } else {
+    dangerFrame.classList.remove('active');
+    document.body.classList.remove('shake');
+  }
+  setDroneIntensity(Math.max(0, (60-health)/60));
+
+  // BGMの明暗：不幸なイベント（鬱・病気）が一度でも起きたら、以降ずっと暗いまま
+  if (depression || cirrhosis || diabetes || dialysis || health < 40){
+    moodLockedDark = true;
+  }
+  setMood(moodLockedDark ? 'dark' : 'bright');
+
+  // UI更新
+  document.getElementById('val-happy').textContent = Math.round(happiness);
+  document.getElementById('val-health').textContent = Math.round(health);
+  document.getElementById('bar-happy').style.width = happiness+'%';
+  document.getElementById('bar-health').style.width = health+'%';
+  const healthEl = document.getElementById('val-health');
+  if (health < 30) healthEl.style.color = '#e85c5c';
+  else if (health < 60) healthEl.style.color = '#f0b94d';
+  else healthEl.style.color = '#7be38a';
+
+  // ストレスメーター更新
+  document.getElementById('val-stress').textContent = Math.round(stress);
+  document.getElementById('bar-stress').style.width = stress+'%';
+  const stressEl = document.getElementById('val-stress');
+  if (stress > 65) stressEl.style.color = '#e85c5c';       // 暴走域（レバーが右へ）
+  else if (stress > 50) stressEl.style.color = '#f0b94d';
+  else stressEl.style.color = '#9a7bd8';
+
+  // エンディング判定
+  if (health <= 0 && !dialysis && !ended){
+    endGame(false,
+      "アルコールがあなたの身体を、静かに、しかし確実に蝕みきった。" +
+      `享年${age}。最後の一杯が、本当に最後の一杯になった。` +
+      "「まだ大丈夫」という言葉を、あなたは人生で何回使っただろうか。");
+  }
+  // 平均寿命到達（81歳）：幸福度によってエンディングが分岐
+  if (age >= 81 && !ended){
+    if (happiness < 30){
+      // 生き延びたが、幸福ではなかった
+      endGame(false,
+        `${age}歳。あなたは平均寿命まで生き延びた。ただ「生きた」だけだった。` +
+        "身体は動いても、心はとうに乾いていた。" +
+        "長生きと幸福は、同じ言葉ではなかったらしい。", 'empty');
+    } else {
+      // 健康に添い遂げた（ただし最後にひと刺し）
+      endGame(true,
+        `${age}歳。あなたは酒と上手に付き合い、平均寿命まで生き抜いた。` +
+        "お金も、友人も、家族も——すべては健康という土台の上にだけ立っている。" +
+        "健康こそが、不幸にならないための大前提だ。" +
+        "さて。あなたは本当に、後悔のない人生を生きたと言えるだろうか。");
+    }
+  }
+}
+
+function checkLifeEvents(){
+  lifeEvents.forEach(ev=>{
+    if (!firedEvents[ev.id] && age >= ev.ageAt){
+      if (ev.condition && !ev.condition()){
+        firedEvents[ev.id] = true; // 条件を満たさない場合はスキップ扱い
+        return;
+      }
+      firedEvents[ev.id] = true;
+      // ストレスの増減を適用
+      if (ev.stressUp) stress = Math.min(100, stress + ev.stressUp);
+      if (ev.stressDown) stress = Math.max(0, stress - ev.stressDown);
+      const positive = !!ev.stressDown || ev.id === 'child';
+      openCurtain(ev.icon, `${ev.ageAt}歳`, ev.title, ev.text, positive);
+    }
+  });
+}
+
+/* ===================== 透析ショック説明文 ===================== */
+function showShockMsg(text){
+  const overlay = document.getElementById('shock-overlay');
+  const line = document.createElement('div');
+  line.className = 'shock-line';
+  line.textContent = text;
+  overlay.appendChild(line);
+  playBeep(360, 0.18, 0.07);
+  // 画面を少し揺らす
+  document.body.classList.add('shake');
+  setTimeout(()=>{ if(health>=30) document.body.classList.remove('shake'); }, 400);
+  // 古い行は消していく（最大3行まで画面に残す）
+  while(overlay.children.length > 3){
+    overlay.removeChild(overlay.firstChild);
+  }
+  // 一定時間で自然に消す（読み切れるよう長めに）
+  setTimeout(()=>{ if(line.parentNode) line.style.opacity = '0'; }, 5000);
+}
+
+/* ===================== 幕（イベント）演出 ===================== */
+function openCurtain(icon, ageStr, title, text, positive){
+  paused = true;
+  if (positive) playChime(); else playBeep(300, 0.4, 0.08);
+  const c = document.getElementById('curtain');
+  document.getElementById('ev-icon').textContent = icon;
+  document.getElementById('ev-age').textContent = ageStr;
+  document.getElementById('ev-title').textContent = title;
+  document.getElementById('ev-text').textContent = text;
+  c.classList.add('show');
+  requestAnimationFrame(()=>{ c.classList.add('visible'); });
+}
+function closeCurtain(){
+  const c = document.getElementById('curtain');
+  c.classList.remove('visible');
+  setTimeout(()=>{ c.classList.remove('show'); paused = false; }, 800);
+}
+
+/* ===================== エンディング ===================== */
+function endGame(isGood, msg, cause){
+  ended = true;
+  running = false;
+  document.body.classList.remove('shake');
+  document.getElementById('danger-frame').classList.remove('active');
+  document.getElementById('shock-overlay').innerHTML = '';
+  playEndTone();
+  setTimeout(()=>{
+    const title = document.getElementById('ending-title');
+    title.textContent = isGood ? 'LIFE COMPLETE' : 'GAME OVER';
+    title.className = isGood ? 'good' : 'bad';
+    document.getElementById('ending-text').textContent = msg;
+    document.getElementById('ending').classList.add('show');
+  }, 1200);
+}
+
+/* ===================== 描画（グラスと液面） ===================== */
+function draw(){
+  const w = canvas.getBoundingClientRect().width;
+  ctx.clearRect(0, 0, w, 200);
+
+  // 背景のうっすらグリッド
+  ctx.strokeStyle = 'rgba(240,185,77,0.04)';
+  for(let i=0;i<w;i+=20){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,200); ctx.stroke(); }
+
+  // グラス（人生の器）を中央に描く
+  const gx = w/2, gw = 70, gh = 120, gy = 40;
+  ctx.strokeStyle = 'rgba(232,232,240,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(gx-gw/2, gy);
+  ctx.lineTo(gx-gw/2+8, gy+gh);
+  ctx.lineTo(gx+gw/2-8, gy+gh);
+  ctx.lineTo(gx+gw/2, gy);
+  ctx.stroke();
+
+  // 液面 = 飲酒量
+  const level = alcohol/100;
+  if (level > 0.01){
+    const liquidH = gh * level * 0.9;
+    const topY = gy + gh - liquidH;
+    const grad = ctx.createLinearGradient(0, topY, 0, gy+gh);
+    grad.addColorStop(0, 'rgba(240,185,77,0.85)');
+    grad.addColorStop(1, 'rgba(200,120,60,0.9)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    const inset = 8 * (1 - liquidH/gh);
+    ctx.moveTo(gx-gw/2+inset, topY);
+    ctx.lineTo(gx-gw/2+8, gy+gh-2);
+    ctx.lineTo(gx+gw/2-8, gy+gh-2);
+    ctx.lineTo(gx+gw/2-inset, topY);
+    ctx.closePath();
+    ctx.fill();
+    // 泡
+    if (tick % 3 === 0){
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.arc(gx-gw/4+Math.random()*gw/2, topY+Math.random()*liquidH, 1.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // 健康度に応じて画面下部に「濁り」を演出
+  if (health < 60){
+    const murk = (60-health)/60;
+    ctx.fillStyle = `rgba(180,60,80,${murk*0.15})`;
+    ctx.fillRect(0, 200-40, w, 40);
+  }
+
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = 'rgba(122,122,144,0.8)';
+  ctx.textAlign = 'center';
+  ctx.fillText('あなたの人生のグラス', gx, gy+gh+24);
+}
+
+/* ===================== ログ ===================== */
+function pushLog(){
+  const list = document.getElementById('log-list');
+  let pool, warn = false;
+  if (dialysis){ pool = logsDialysis; warn = true; }
+  else if (cirrhosis){ pool = logsCirrhosis; warn = true; }
+  else if (depression){ pool = logsDepression; warn = true; }
+  else if (diabetes){ pool = logsDiabetes; warn = true; }
+  else if (alcohol < 10) pool = logsSober;
+  else if (alcohol <= 40) pool = logsModerate;
+  else { pool = logsHeavy; warn = true; }
+  const msg = pool[Math.floor(Math.random()*pool.length)];
+  list.innerHTML = '';
+  const div = document.createElement('div');
+  if (warn) div.classList.add('warn');
+  div.textContent = '・' + msg;
+  list.appendChild(div);
+}
+
+/* ===================== ループ・操作 ===================== */
+function loop(){
+  if (!running) return;
+  updateSimulation();
+  draw();
+  if (tick % 70 === 0 && !paused) pushLog();
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('alcohol-slider').addEventListener('input', e=>{
+  alcohol = Number(e.target.value);
+  document.getElementById('slider-val').textContent = alcohol;
+});
+
+function startGame(){
+  initAudio();
+  document.getElementById('splash').style.opacity = 0;
+  setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, 600);
+  document.getElementById('main').style.display = 'block';
+  resizeCanvas();
+  running = true;
+  loop();
+}
+
+function resetGame(){
+  alcohol = 0; happiness = 50; health = 100;
+  stress = 20; bloodSugar = 30;
+  age = 18; ageAccumulator = 0; tick = 0;
+  paused = false; ended = false; firedEvents = {};
+  cirrhosis = false; diabetes = false; dialysis = false; dialysisAge = null;
+  dialysisMsgTimer = 0; dialysisMsgIndex = 0; stressForcing = false; depression = false; depressionCooldown = 0; depressionOvercome = false;
+  moodLockedDark = false;
+  if (audioCtx) setMood('bright');
+  const slider = document.getElementById('alcohol-slider');
+  slider.disabled = false; slider.style.opacity = '1'; slider.value = 0;
+  document.getElementById('slider-val').textContent = 0;
+  document.getElementById('age-value').textContent = 18;
+  document.getElementById('val-stress').textContent = 20;
+  document.getElementById('bar-stress').style.width = '20%';
+  document.getElementById('log-list').innerHTML = '';
+  document.getElementById('shock-overlay').innerHTML = '';
+  document.getElementById('danger-frame').classList.remove('active');
+  document.body.classList.remove('shake');
+  if (!running){ running = true; loop(); }
+}
+
+function showEgg(){
+  document.getElementById('egg-text').textContent =
+    eggLines[Math.floor(Math.random()*eggLines.length)];
+}
+
+window.addEventListener('resize', ()=>{ if(running) resizeCanvas(); });
+</script>
+</body>
+</html>
