@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>岡本博之（Hiroyuki先生）｜簿記講師・日本語教師</title>
+<meta name="description" content="司法試験合格、EYで法務と資産税、2009年税理士登録。相続の現場を知る講師による少人数オンライン簿記講座。日本語教師としてJLPT N1・N2も指導。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#121A2B;      /* 濃紺（ヒーロー・フッター） */
+    --ink:#1C2538;        /* 本文の紺 */
+    --sub:#5E6878;        /* 補足 */
+    --line:#DCE3EC;       /* 罫線 */
+    --paper:#FFFFFF;
+    --mist:#F3F6FA;       /* 薄い背景 */
+    --red:#C8312F;        /* 帳簿の赤線 */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+    font-size:16px;line-height:1.9;letter-spacing:.02em;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  }
+  a{color:inherit}
+  img{max-width:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:0 22px}
+
+  /* ===== ヒーロー ===== */
+  .hero{position:relative;background:var(--night);color:#fff;overflow:hidden}
+  .hero-photo{position:absolute;inset:0}
+  .hero-photo img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
+  .hero::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(18,26,43,0) 30%,rgba(18,26,43,.55) 62%,rgba(18,26,43,.96) 100%);
+  }
+  .hero-inner{position:relative;z-index:1;min-height:88svh;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:34px}
+  .hero-sign{font-size:13px;font-weight:500;opacity:.8;margin-bottom:6px}
+  .hero-name{font-size:46px;font-weight:900;line-height:1.15;letter-spacing:.08em}
+  .hero-roman{font-size:13px;font-weight:500;letter-spacing:.24em;opacity:.75;margin-top:6px}
+  .hero-roles{margin-top:18px;font-size:15px;font-weight:700;line-height:1.7}
+  .hero-roles span{display:inline-block;margin-right:14px}
+  .hero-cred{margin-top:6px;font-size:13px;opacity:.82;line-height:1.7}
+  .social{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .social a{
+    font-size:13px;font-weight:700;text-decoration:none;color:#fff;
+    border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:7px 16px;
+  }
+  .social a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+  /* ===== 数字で見る ===== */
+  .stats{background:var(--night);color:#fff;border-top:1px solid rgba(255,255,255,.12)}
+  .stats .wrap{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+  @media(min-width:640px){.stats .wrap{grid-template-columns:repeat(4,1fr)}}
+  .stat{padding:20px 4px 22px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .stat:nth-child(odd){padding-right:14px}
+  .stat b{display:block;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:.02em}
+  .stat b small{font-size:14px;font-weight:700;margin-left:2px}
+  .stat span{font-size:12.5px;opacity:.75;line-height:1.5;display:block;margin-top:4px}
+
+  /* ===== タブ ===== */
+  .tabs{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .tabs .wrap{display:flex}
+  .tab{
+    flex:1;background:none;border:none;cursor:pointer;
+    font:inherit;font-size:15px;font-weight:500;color:var(--sub);
+    padding:15px 4px 13px;border-bottom:3px solid transparent;
+  }
+  .tab[aria-selected="true"]{color:var(--ink);font-weight:900;border-bottom-color:var(--red)}
+  .tab:focus-visible{outline:2px solid var(--ink);outline-offset:-4px}
+
+  .panel{display:none}
+  .panel.active{display:block}
+  .block{padding:64px 0}
+  .block.mist{background:var(--mist)}
+
+  /* 見出し：英語の大きな語＋日本語 */
+  .head{margin-bottom:28px}
+  .head .en{display:block;font-size:13px;font-weight:700;color:var(--red);letter-spacing:.14em}
+  .head h2{font-size:28px;font-weight:900;line-height:1.35;margin-top:4px}
+  .lead{font-size:16.5px;line-height:2}
+  .lead + .lead{margin-top:14px}
+  .note{font-size:13.5px;color:var(--sub);margin-top:16px;line-height:1.8}
+
+  /* キャッチ */
+  .catch{font-size:19px;font-weight:700;line-height:1.7;margin-bottom:18px}
+
+  /* 経歴 */
+  .career{list-style:none;border-top:1px solid var(--line)}
+  .career li{display:grid;grid-template-columns:88px 1fr;gap:14px;padding:18px 0;border-bottom:1px solid var(--line)}
+  .career .yr{font-size:14px;font-weight:900;color:var(--ink);line-height:1.6;padding-top:1px}
+  .career .yr.soft{color:var(--sub);font-weight:700}
+  .career h3{font-size:16.5px;font-weight:700;line-height:1.6}
+  .career p{font-size:14px;color:var(--sub);line-height:1.8;margin-top:4px}
+  .profile-mini{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin-top:22px;font-size:14px}
+  .profile-mini dt{color:var(--sub)}
+  .profile-mini dd{font-weight:500}
+
+  /* 実務の3本柱 */
+  .pillars{display:grid;gap:14px}
+  @media(min-width:640px){.pillars{grid-template-columns:repeat(3,1fr)}}
+  .pillar{background:#fff;border-radius:12px;padding:22px 20px;border-top:4px solid var(--ink)}
+  .pillar h3{font-size:17px;font-weight:900;line-height:1.5}
+  .pillar p{font-size:14px;color:var(--sub);line-height:1.85;margin-top:8px}
+
+  /* 講座 */
+  .courses{display:grid;gap:14px}
+  @media(min-width:640px){.courses{grid-template-columns:1fr 1fr}}
+  .course{border:1px solid var(--line);border-radius:12px;padding:22px 20px}
+  .course h3{font-size:18px;font-weight:900}
+  .course .price{font-size:30px;font-weight:900;margin-top:8px;line-height:1.2}
+  .course .price small{font-size:14px;font-weight:700;margin-left:2px;color:var(--sub)}
+  .course ul{list-style:none;margin-top:12px;border-top:1px solid var(--line)}
+  .course li{font-size:14px;padding:8px 0;border-bottom:1px solid var(--line)}
+
+  /* ひとこと */
+  .quote-block{background:var(--night);color:#fff;padding:60px 0}
+  .quote{font-size:24px;font-weight:900;line-height:1.7}
+  .quote::before{content:"";display:block;width:40px;height:4px;background:var(--red);margin-bottom:22px}
+  .quote-by{font-size:13px;opacity:.7;margin-top:16px}
+
+  /* ボタン */
+  .btn{
+    display:inline-block;margin-top:16px;padding:14px 28px;border-radius:999px;
+    background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:15px;
+  }
+  .btn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+  .btn.line{background:none;color:var(--ink);border:1.5px solid var(--ink)}
+
+  /* お問い合わせ */
+  .contact-grid{display:grid;gap:22px;align-items:center}
+  @media(min-width:640px){.contact-grid{grid-template-columns:1fr auto}}
+  .mail{font-size:14px;word-break:break-all;margin-top:10px;color:var(--sub)}
+  .qr{display:flex;gap:16px;align-items:center}
+  .qr-img{width:132px;height:132px;flex:none;background:#fff;border-radius:10px;padding:8px;border:1px solid var(--line)}
+  .qr-img img{width:100%;height:100%;object-fit:contain;display:block}
+  .qr p{font-size:13.5px;color:var(--sub);line-height:1.7}
+
+  /* 日本語教師 */
+  .facts{list-style:none;border-top:1px solid var(--line)}
+  .facts li{padding:14px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .facts b{font-weight:900}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .photo{margin:0}
+  .photo button{
+    display:block;width:100%;padding:0;border:none;background:var(--mist);cursor:zoom-in;
+    aspect-ratio:2/3;border-radius:10px;overflow:hidden;
+  }
+  .photo button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .photo img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+  .photo figcaption{font-size:12px;font-weight:700;line-height:1.45;margin-top:7px}
+  .photo figcaption span{display:block;color:var(--sub);font-weight:400;font-size:11.5px}
+
+  /* 画像を大きく見る */
+  .viewer{position:fixed;inset:0;z-index:50;background:rgba(12,17,28,.94);display:none;overflow-y:auto}
+  .viewer.open{display:block}
+  .viewer img{display:block;width:100%;max-width:760px;margin:60px auto 32px;height:auto}
+  .viewer-close{
+    position:fixed;top:12px;right:12px;z-index:51;
+    background:#fff;color:var(--ink);border:none;border-radius:999px;
+    font:inherit;font-weight:700;font-size:14px;padding:8px 18px;cursor:pointer;
+  }
+
+  /* 作品一覧 */
+  .ledger{list-style:none;border-top:2px solid var(--ink)}
+  .ledger li{border-bottom:1px solid var(--line)}
+  .ledger a{display:block;padding:15px 2px;text-decoration:none}
+  .ledger a:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+  .ledger .t{font-weight:700;font-size:15.5px;display:block}
+  .ledger .d{font-size:13.5px;color:var(--sub);display:block;line-height:1.6}
+  @media(hover:hover){.ledger a:hover{background:var(--mist)}}
+  .sub-h{font-size:17px;font-weight:900;margin:40px 0 12px}
+  .sub-h:first-of-type{margin-top:0}
+
+  footer{background:var(--night);color:rgba(255,255,255,.7);padding:28px 0 44px;font-size:12.5px;text-align:center}
+
+  .empty{font-size:11px;color:var(--sub);padding:8px;text-align:center;line-height:1.5;display:flex;align-items:center;justify-content:center;height:100%}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<!-- ===== ヒーロー（全ページ共通） ===== -->
+<header class="hero">
+  <div class="hero-photo"><img src="me.jpg" alt="岡本博之の写真"></div>
+  <div class="wrap hero-inner">
+    <div class="hero-sign">Hiroyuki先生</div>
+    <h1 class="hero-name">岡本 博之</h1>
+    <div class="hero-roman">OKAMOTO HIROYUKI</div>
+    <div class="hero-roles"><span>簿記講師</span><span>日本語教師</span><span>AIクリエイター</span></div>
+    <div class="hero-cred">司法試験合格／元EY（アーンスト・アンド・ヤング）／2009年 税理士登録</div>
+    <div class="social">
+      <a href="https://www.facebook.com/share/1HKJCCv4we/" target="_blank" rel="noopener">Facebook</a>
+      <a href="https://youtube.com/@nihongo-house" target="_blank" rel="noopener">YouTube</a>
+    </div>
+  </div>
+</header>
+
+<section class="stats" aria-label="数字で見るプロフィール">
+  <div class="wrap">
+    <div class="stat"><b>2009<small>年</small></b><span>税理士登録</span></div>
+    <div class="stat"><b>8<small>年</small></b><span>相続税の実務</span></div>
+    <div class="stat"><b>40<small>人</small></b><span>日本語を教えた生徒</span></div>
+    <div class="stat"><b>1.2<small>万人</small></b><span>Facebookフォロワー</span></div>
+  </div>
+</section>
+
+<nav class="tabs" aria-label="ページの切り替え">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" id="tab-boki" aria-controls="boki" aria-selected="true">簿記講師</button>
+    <button class="tab" role="tab" id="tab-nihongo" aria-controls="nihongo" aria-selected="false">日本語教師</button>
+    <button class="tab" role="tab" id="tab-works" aria-controls="works" aria-selected="false">作ったもの</button>
+  </div>
+</nav>
+
+<main>
+<!-- ================= 簿記講師 ================= -->
+<section class="panel active" id="boki" role="tabpanel" aria-labelledby="tab-boki">
+
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Message</span><h2>簿記を、使える武器に。</h2></div>
+      <p class="catch">相続の裁判と税務の現場を見てきた講師が、簿記を教えています。</p>
+      <p class="lead">簿記は、試験のためだけの知識ではありません。帳簿が読めれば、会社のお金の流れが見え、税金の仕組みが見え、交渉の場でも強くなれます。</p>
+      <p class="lead">法律と税の実務で積み上げた経験から、「なぜそうなるのか」まで分かる授業を、少人数のオンラインで行っています。</p>
+    </div>
+  </div>
+
+  <div class="block mist">
+    <div class="wrap">
+      <div class="head"><span class="en">Expertise</span><h2>実務でやってきたこと</h2></div>
+      <div class="pillars">
+        <div class="pillar">
+          <h3>相続をめぐる裁判</h3>
+          <p>EYの法務部で、重要顧客の家事事件を担当。遺産をめぐる争いの裁判で、担当した案件は負けなし。</p>
+        </div>
+        <div class="pillar">
+          <h3>相続税の相談と申告</h3>
+          <p>EYの資産税部門と相続税専門の事務所で、あわせて8年。相続税の相談から申告、遺産分割協議書の作成まで。</p>
+        </div>
+        <div class="pillar">
+          <h3>節税の設計</h3>
+          <p>法人税と所得税、両方の視点から、会社と個人のお金をどう組み立てると無駄がないかを設計。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Career</span><h2>経歴</h2></div>
+      <ul class="career">
+        <li><div class="yr soft">学歴</div><div><h3>関西学院大学 卒業</h3><p>岡山県倉敷市出身。倉敷青陵高校から関西学院大学へ。</p></div></li>
+        <li><div class="yr soft">法律</div><div><h3>司法試験 合格</h3><p>法律事務所ではなく、世界4大会計事務所のひとつ、EY（アーンスト・アンド・ヤング）の道を選ぶ。</p></div></li>
+        <li><div class="yr soft">EY</div><div><h3>法務部・資産税部門を兼務</h3><p>重要顧客の相続をめぐる家事事件を担当。裁判のあとに続く確定申告や節税に関心を持つ。</p></div></li>
+        <li><div class="yr">2009</div><div><h3>税理士登録</h3><p>EYの資産税部門で5年、相続税の申告と節税の設計に携わる。</p></div></li>
+        <li><div class="yr soft">事務所</div><div><h3>相続税専門の会計事務所</h3><p>3年間、相続税の相談・申告、遺産分割協議書の作成を担当。</p></div></li>
+        <li><div class="yr">2018</div><div><h3>独立、簿記講師に</h3><p>少人数制のオンライン簿記講座を始める。</p></div></li>
+        <li><div class="yr">2020</div><div><h3>日本語教師として活動開始</h3><p>YouTube「Nihongo House」とオンライン授業で、JLPT N1・N2を指導。</p></div></li>
+        <li><div class="yr">現在</div><div><h3>講師とAIクリエイター</h3><p>授業のかたわら、学べるゲームやアプリを自作して公開。</p></div></li>
+      </ul>
+      <dl class="profile-mini">
+        <dt>拠点</dt><dd>大阪市</dd>
+        <dt>出身</dt><dd>岡山県倉敷市</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="block mist">
+    <div class="wrap">
+      <div class="head"><span class="en">Course</span><h2>講座と料金</h2></div>
+      <div class="courses">
+        <div class="course">
+          <h3>簿記3級</h3>
+          <div class="price">16,000円<small>／月</small></div>
+          <ul><li>1回60分</li><li>週2回（月8回）</li><li>はじめての方向け</li></ul>
+        </div>
+        <div class="course">
+          <h3>簿記2級</h3>
+          <div class="price">24,000円<small>／月</small></div>
+          <ul><li>1回90分</li><li>週2回（月8回）</li><li>3級を終えた方向け</li></ul>
+        </div>
+      </div>
+      <p class="note">授業はすべてオンライン・少人数制です。対面の授業は行っていません。</p>
+    </div>
+  </div>
+
+  <div class="quote-block">
+    <div class="wrap">
+      <p class="quote">数字にしないものは、直せない。<br>簿記は、お金の流れを数字にして、向き合うための道具です。</p>
+      <p class="quote-by">岡本博之</p>
+    </div>
+  </div>
+
+  <div class="block" id="contact">
+    <div class="wrap">
+      <div class="head"><span class="en">Contact</span><h2>お問い合わせ</h2></div>
+      <div class="contact-grid">
+        <div>
+          <p class="lead">受講のご相談や体験授業については、メールかLINEでどうぞ。</p>
+          <a class="btn" href="mailto:eden-art-heaven@ezweb.ne.jp">メールで問い合わせる</a>
+          <p class="mail">eden-art-heaven@ezweb.ne.jp</p>
+        </div>
+        <div class="qr">
+          <div class="qr-img"><img src="line-qr.jpg" alt="LINEのQRコード"></div>
+          <p>LINEの場合は<br>QRコードを読み取って<br>ください。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 日本語教師 ================= -->
+<section class="panel" id="nihongo" role="tabpanel" aria-labelledby="tab-nihongo">
+
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Japanese</span><h2>目指すのは、JLPT N1合格。</h2></div>
+      <p class="lead">2020年から、フリーの日本語教師としてオンラインで教えています。YouTubeでは「Nihongo House」として活動中です。</p>
+      <p class="lead">N1に合格したら卒業。卒業したあとは、先生と生徒ではなく、飲み友達として付き合っています。</p>
+    </div>
+  </div>
+
+  <div class="block mist">
+    <div class="wrap">
+      <div class="head"><span class="en">Class</span><h2>授業のしくみ</h2></div>
+      <ul class="facts">
+        <li><b>N1クラスとN2クラス</b>の2つ。どちらも1回90分・週2回</li>
+        <li>1クラス<b>10人ほど</b>の少人数</li>
+        <li>N3を受けたことがある方は、N2合格を目指すクラスへ</li>
+        <li>N3〜N5だけを目指す授業は行っていません</li>
+        <li>これまでに教えた生徒さんは<b>40人</b></li>
+      </ul>
+      <p class="note">現在、新しい生徒さんの募集はしていません。</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Students</span><h2>これまでの生徒さん</h2></div>
+      <p class="note" style="margin:-10px 0 20px">画像をタップすると大きく表示されます。画像はご本人の許可を得てAIで作成したイメージで、ご本人の写真ではありません。</p>
+      <div class="gallery">
+        <figure class="photo"><button type="button"><img src="student1.jpg" alt="ニコラス・アルバレスさんの紹介"></button><figcaption>ニコラス・アルバレス<span>アルゼンチン</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student2.jpg" alt="エミリー・カーターさんの紹介"></button><figcaption>エミリー・カーター<span>イギリス・N1合格</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student3.jpg" alt="ジェームズ・ミラーさんの紹介"></button><figcaption>ジェームズ・ミラー<span>アメリカ・N2</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student4.jpg" alt="グエン・ティ・キム・アインさんの紹介"></button><figcaption>グエン・ティ・キム・アイン<span>ベトナム・N1合格</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student5.jpg" alt="ユ・モン・モン・ミョーさんの紹介"></button><figcaption>ユ・モン・モン・ミョー<span>ミャンマー・N1合格</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student6.jpg" alt="ウィパダー・ナンタポーンさんの紹介"></button><figcaption>ウィパダー・ナンタポーン<span>タイ・N2合格</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student7.jpg" alt="アユさんの紹介"></button><figcaption>アユ<span>インドネシア</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student8.jpg" alt="マリア・ジョイ・サントスさんの紹介"></button><figcaption>マリア・ジョイ・サントス<span>フィリピン</span></figcaption></figure>
+        <figure class="photo"><button type="button"><img src="student9.jpg" alt="パク・ドンソクさんの紹介"></button><figcaption>パク・ドンソク<span>韓国</span></figcaption></figure>
+      </div>
+    </div>
+  </div>
+
+  <div class="block mist">
+    <div class="wrap">
+      <div class="head"><span class="en">More</span><h2>動画とアプリ</h2></div>
+      <p class="lead">日本語の授業動画をYouTube「Nihongo House」で公開しています。9つの言語で使える、日本語レベルのチェックアプリもあります。</p>
+      <a class="btn" href="https://youtube.com/@nihongo-house" target="_blank" rel="noopener">Nihongo Houseを見る</a><br>
+      <a class="btn line" href="nihongojin.html">日本語レベルチェックを開く</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 作ったもの ================= -->
+<section class="panel" id="works" role="tabpanel" aria-labelledby="tab-works">
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Works</span><h2>ゲームとアプリ</h2></div>
+      <p class="lead" style="margin-bottom:36px">授業の合間に、AIを使って学べるゲームや社会を考えるシミュレーションを作っています。すべてスマホでそのまま遊べます。</p>
+
+      <h3 class="sub-h">簿記・お金を学ぶ</h3>
+      <ul class="ledger">
+        <li><a href="boki1.html"><span class="t">簿記クイズ 基礎編</span><span class="d">仕訳の基本を4択で。</span></a></li>
+        <li><a href="boki2.html"><span class="t">簿記クイズ 応用編</span><span class="d">貸借対照表・損益計算書が動く図つき。</span></a></li>
+        <li><a href="kaikei1.html"><span class="t">会計の基礎</span><span class="d">決算書の読み方を問題で確認。</span></a></li>
+        <li><a href="zeiho1.html"><span class="t">税法クイズ 基礎編</span><span class="d">税金のしくみを入門から。</span></a></li>
+        <li><a href="zeiho2.html"><span class="t">フリーランスの税とお金</span><span class="d">確定申告と手元のお金の流れ。</span></a></li>
+        <li><a href="zaimuquest.html"><span class="t">ZAIMU QUEST</span><span class="d">国の財政をボス戦RPGで学ぶ。</span></a></li>
+        <li><a href="kourouquest1.html"><span class="t">KOUROU QUEST</span><span class="d">社会保険料のしくみをRPGで学ぶ。</span></a></li>
+      </ul>
+
+      <h3 class="sub-h">社会を考えるシミュレーション</h3>
+      <ul class="ledger">
+        <li><a href="whitedystopia.html"><span class="t">ホワイト・ディストピア</span><span class="d">余暇の量で、国の人口がどう変わるか。</span></a></li>
+        <li><a href="alcohol.html"><span class="t">人生滅亡実験『アルコール』</span><span class="d">お酒と食事とストレスで、18歳からの一生をたどる。</span></a></li>
+        <li><a href="cityhall1.html"><span class="t">ナマポクエスト</span><span class="d">生活保護の申請窓口をRPGで体験。</span></a></li>
+      </ul>
+
+      <h3 class="sub-h">遊び・その他</h3>
+      <ul class="ledger">
+        <li><a href="dragonzakura.html"><span class="t">ドラゴン桜JUMP</span><span class="d">横スクロールのアクションゲーム。</span></a></li>
+        <li><a href="childrenfirst.html"><span class="t">ブロック崩し</span><span class="d">100日チャレンジの1日目に作ったもの。</span></a></li>
+        <li><a href="uranai2.html"><span class="t">十戒の審判</span><span class="d">ちょっと変わった占いアプリ。</span></a></li>
+        <li><a href="shindan.html"><span class="t">趣味診断</span><span class="d">いくつかの質問で、向いている趣味を診断。</span></a></li>
+        <li><a href="love.html"><span class="t">恋愛理論クイズ</span><span class="d">恋愛にまつわる心理学をクイズで。</span></a></li>
+        <li><a href="iq.html"><span class="t">IQテスト（ネタ）</span><span class="d">本気にしないでください。</span></a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">© 岡本博之（Hiroyuki先生）</div>
+</footer>
+
+<!-- 画像を大きく見る画面 -->
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="画像を大きく表示">
+  <button class="viewer-close" type="button" id="viewer-close">閉じる</button>
+  <img id="viewer-img" alt="">
+</div>
+
+<script>
+  // タブの切り替え
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  const tabBar = document.querySelector('.tabs');
+  function openTab(id, scroll){
+    tabs.forEach(t => t.setAttribute('aria-selected', t.getAttribute('aria-controls') === id));
+    panels.forEach(p => p.classList.toggle('active', p.id === id));
+    history.replaceState(null, '', '#' + id);
+    if (scroll && window.scrollY > tabBar.offsetTop) window.scrollTo({top:tabBar.offsetTop});
+  }
+  tabs.forEach(t => t.addEventListener('click', () => openTab(t.getAttribute('aria-controls'), true)));
+  const start = location.hash.replace('#','');
+  if (['boki','nihongo','works'].includes(start)) openTab(start, false);
+
+  // 画像がまだアップロードされていないときは、案内の文字を出す
+  function emptyBox(img){
+    const box = document.createElement('div');
+    box.className = 'empty';
+    box.textContent = img.getAttribute('src') + ' をアップロードすると表示されます';
+    img.replaceWith(box);
+  }
+  document.querySelectorAll('img[src]').forEach(img => {
+    if (img.complete && img.naturalWidth === 0) emptyBox(img);
+    else img.addEventListener('error', () => emptyBox(img));
+  });
+
+  // 生徒さんの画像をタップしたら大きく表示
+  const viewer = document.getElementById('viewer');
+  const viewerImg = document.getElementById('viewer-img');
+  const closeBtn = document.getElementById('viewer-close');
+  let lastBtn = null;
+  document.querySelectorAll('.photo button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const img = btn.querySelector('img');
+      if (!img) return;
+      viewerImg.src = img.src; viewerImg.alt = img.alt;
+      viewer.classList.add('open'); viewer.scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+      lastBtn = btn; closeBtn.focus();
+    });
+  });
+  function closeViewer(){
+    viewer.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastBtn) lastBtn.focus();
+  }
+  closeBtn.addEventListener('click', closeViewer);
+  viewer.addEventListener('click', e => { if (e.target === viewer) closeViewer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && viewer.classList.contains('open')) closeViewer(); });
+</script>
+</body>
+</html>
