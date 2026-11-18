@@ -370,3 +370,103 @@
 </section>
 
 <!-- ================= 作ったもの ================= -->
+<section class="panel" id="works" role="tabpanel" aria-labelledby="tab-works">
+  <div class="block">
+    <div class="wrap">
+      <div class="head"><span class="en">Works</span><h2>制作実績</h2></div>
+      <p class="lead" style="margin-bottom:36px">AIクリエイターとして、学べるゲームや社会を考えるシミュレーションを企画・制作しています。すべてスマホでそのまま遊べます。</p>
+
+      <h3 class="sub-h">簿記・お金を学ぶ</h3>
+      <ul class="ledger">
+        <li><a href="boki1.html"><span class="t">簿記クイズ 基礎編</span><span class="d">仕訳の基本を4択で。</span></a></li>
+        <li><a href="boki2.html"><span class="t">簿記クイズ 応用編</span><span class="d">貸借対照表・損益計算書が動く図つき。</span></a></li>
+        <li><a href="kaikei1.html"><span class="t">会計の基礎</span><span class="d">決算書の読み方を問題で確認。</span></a></li>
+        <li><a href="zeiho1.html"><span class="t">税法クイズ 基礎編</span><span class="d">税金のしくみを入門から。</span></a></li>
+        <li><a href="zeiho2.html"><span class="t">フリーランスの税とお金</span><span class="d">確定申告と手元のお金の流れ。</span></a></li>
+        <li><a href="zaimuquest.html"><span class="t">ZAIMU QUEST</span><span class="d">国の財政をボス戦RPGで学ぶ。</span></a></li>
+        <li><a href="kourouquest1.html"><span class="t">KOUROU QUEST</span><span class="d">社会保険料のしくみをRPGで学ぶ。</span></a></li>
+      </ul>
+
+      <h3 class="sub-h">社会を考えるシミュレーション</h3>
+      <ul class="ledger">
+        <li><a href="whitedystopia.html"><span class="t">ホワイト・ディストピア</span><span class="d">余暇の量で、国の人口がどう変わるか。</span></a></li>
+        <li><a href="alcohol.html"><span class="t">人生滅亡実験『アルコール』</span><span class="d">お酒と食事とストレスで、18歳からの一生をたどる。</span></a></li>
+        <li><a href="cityhall1.html"><span class="t">ナマポクエスト</span><span class="d">生活保護の申請窓口をRPGで体験。</span></a></li>
+      </ul>
+
+      <h3 class="sub-h">遊び・その他</h3>
+      <ul class="ledger">
+        <li><a href="dragonzakura.html"><span class="t">ドラゴン桜JUMP</span><span class="d">横スクロールのアクションゲーム。</span></a></li>
+        <li><a href="childrenfirst.html"><span class="t">ブロック崩し</span><span class="d">100日チャレンジの1日目に作ったもの。</span></a></li>
+        <li><a href="uranai2.html"><span class="t">十戒の審判</span><span class="d">ちょっと変わった占いアプリ。</span></a></li>
+        <li><a href="shindan.html"><span class="t">趣味診断</span><span class="d">いくつかの質問で、向いている趣味を診断。</span></a></li>
+        <li><a href="love.html"><span class="t">恋愛理論クイズ</span><span class="d">恋愛にまつわる心理学をクイズで。</span></a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">© 岡本博之（Hiroyuki先生）</div>
+</footer>
+
+<!-- 画像を大きく見る画面 -->
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="画像を大きく表示">
+  <button class="viewer-close" type="button" id="viewer-close">閉じる</button>
+  <img id="viewer-img" alt="">
+</div>
+
+<script>
+  // タブの切り替え
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  const tabBar = document.querySelector('.tabs');
+  function openTab(id, scroll){
+    tabs.forEach(t => t.setAttribute('aria-selected', t.getAttribute('aria-controls') === id));
+    panels.forEach(p => p.classList.toggle('active', p.id === id));
+    history.replaceState(null, '', '#' + id);
+    if (scroll && window.scrollY > tabBar.offsetTop) window.scrollTo({top:tabBar.offsetTop});
+  }
+  tabs.forEach(t => t.addEventListener('click', () => openTab(t.getAttribute('aria-controls'), true)));
+  const start = location.hash.replace('#','');
+  if (['boki','nihongo','works'].includes(start)) openTab(start, false);
+
+  // 画像がまだアップロードされていないときは、案内の文字を出す
+  function emptyBox(img){
+    const box = document.createElement('div');
+    box.className = 'empty';
+    box.textContent = img.getAttribute('src') + ' をアップロードすると表示されます';
+    img.replaceWith(box);
+  }
+  document.querySelectorAll('img[src]').forEach(img => {
+    if (img.complete && img.naturalWidth === 0) emptyBox(img);
+    else img.addEventListener('error', () => emptyBox(img));
+  });
+
+  // 生徒さんの画像をタップしたら大きく表示
+  const viewer = document.getElementById('viewer');
+  const viewerImg = document.getElementById('viewer-img');
+  const closeBtn = document.getElementById('viewer-close');
+  let lastBtn = null;
+  document.querySelectorAll('.photo button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const img = btn.querySelector('img');
+      if (!img) return;
+      viewerImg.src = img.src; viewerImg.alt = img.alt;
+      viewer.classList.add('open'); viewer.scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+      lastBtn = btn; closeBtn.focus();
+    });
+  });
+  function closeViewer(){
+    viewer.classList.remove('open');
+    document.body.style.overflow = '';
+    if (lastBtn) lastBtn.focus();
+  }
+  closeBtn.addEventListener('click', closeViewer);
+  viewer.addEventListener('click', e => { if (e.target === viewer) closeViewer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && viewer.classList.contains('open')) closeViewer(); });
+</script>
+</body>
+</html>
