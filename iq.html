@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IQ CHECK｜知能の目安テスト</title>
+<meta name="description" content="言葉がほとんどいらない10問で、IQの目安が分かるテスト。日本語と英語に対応。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#E9EDF4;       /* 背景のうすい青灰色 */
+    --paper:#FFFFFF;    /* 問題用紙 */
+    --ink:#17213A;      /* 図形と文字の紺 */
+    --sub:#5D6880;      /* 補足の文字 */
+    --line:#D3DAE6;     /* 罫線 */
+    --blue:#2747D0;     /* ボタンと時間のバー */
+    --gold:#B87700;     /* ほめる色 */
+    --rose:#C24A5A;     /* 時間ぎれ */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif;
+    font-size:16px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+    min-height:100svh;
+  }
+  .app{max-width:480px;margin:0 auto;padding:18px 16px 40px}
+  .en{display:block;font-size:.82em;color:var(--sub);font-weight:500;line-height:1.5}
+  .num{font-family:"Archivo",sans-serif}
+  button{font:inherit;color:inherit}
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ===== はじめの画面 ===== */
+  .intro-top{padding:34px 4px 26px}
+  .logo{font-family:"Archivo",sans-serif;font-weight:900;font-size:64px;line-height:.95;letter-spacing:-.02em}
+  .logo b{color:var(--blue)}
+  .logo-sub{font-size:20px;font-weight:900;margin-top:12px}
+  .logo-sub .en{font-size:14px}
+  .sample{background:var(--paper);border-radius:14px;padding:16px;margin:4px 0 18px}
+  .sample svg{display:block;width:100%;height:auto}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .fact{background:var(--paper);border-radius:12px;padding:12px 8px;text-align:center}
+  .fact b{display:block;font-family:"Archivo",sans-serif;font-size:26px;font-weight:900;line-height:1.1}
+  .fact span{font-size:12px;font-weight:700;display:block;margin-top:4px;line-height:1.4}
+  .fact .en{font-size:11px}
+  .howto{font-size:14.5px;margin-bottom:22px;padding:0 4px}
+  .btn{
+    display:block;width:100%;border:none;border-radius:14px;cursor:pointer;
+    background:var(--blue);color:#fff;font-weight:900;font-size:18px;padding:16px;line-height:1.3;
+  }
+  .btn .en{color:rgba(255,255,255,.8);font-size:13px}
+  .btn:focus-visible,.opt:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .btn.ghost{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ghost .en{color:var(--sub)}
+  .fine{font-size:12px;color:var(--sub);margin-top:14px;text-align:center;line-height:1.6}
+
+  /* ===== 問題の画面 ===== */
+  .bar-top{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 8px}
+  .qno{font-family:"Archivo",sans-serif;font-weight:900;font-size:22px}
+  .qno small{font-size:14px;color:var(--sub);font-weight:500}
+  .clock{font-family:"Archivo",sans-serif;font-weight:800;font-size:16px;color:var(--sub)}
+  .clock.hurry{color:var(--rose)}
+  .timebar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .timebar i{display:block;height:100%;background:var(--blue);width:100%;transform-origin:left}
+  .timebar.hurry i{background:var(--rose)}
+  .card{background:var(--paper);border-radius:16px;padding:18px 16px 16px}
+  .prompt{font-size:17px;font-weight:900;line-height:1.5;margin-bottom:14px}
+  .prompt .en{font-size:13px}
+  .figure{margin:0 auto 6px;max-width:330px}
+  .figure svg{display:block;width:100%;height:auto}
+  .seq{
+    font-family:"Archivo",sans-serif;font-weight:800;font-size:30px;text-align:center;
+    letter-spacing:.02em;padding:18px 0 22px;word-spacing:.35em;
+  }
+  .seq .q{color:var(--blue)}
+  .opts{display:grid;gap:10px;margin-top:16px}
+  .opts.c3{grid-template-columns:repeat(3,1fr)}
+  .opts.c2{grid-template-columns:repeat(2,1fr)}
+  .opt{
+    position:relative;background:var(--paper);border:2px solid var(--line);border-radius:12px;
+    cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;
+    transition:border-color .12s, transform .12s;
+  }
+  .opt svg{display:block;width:100%;height:auto}
+  .opt .lab{
+    position:absolute;top:4px;left:7px;font-family:"Archivo",sans-serif;font-size:11px;
+    font-weight:800;color:var(--sub);
+  }
+  .opt.text{font-family:"Archivo",sans-serif;font-weight:800;font-size:28px;padding:16px 6px}
+  .opt.picked{border-color:var(--blue);transform:scale(.96);background:#EEF2FF}
+  @media(hover:hover){.opt:hover{border-color:var(--blue)}}
+
+  /* ===== 結果の画面 ===== */
+  .res-head{padding:26px 4px 8px}
+  .res-head .lbl{font-size:15px;font-weight:700}
+  .iq{font-family:"Archivo",sans-serif;font-weight:900;font-size:108px;line-height:1;letter-spacing:-.03em;margin-top:4px}
+  .iq small{font-size:26px;letter-spacing:0;margin-right:6px;color:var(--sub);font-weight:800}
+  .band{font-size:24px;font-weight:900;line-height:1.35;margin-top:10px}
+  .band .en{font-size:15px;font-weight:700}
+  .band.top{color:var(--gold)}
+  .rank{margin-top:10px;font-size:15px;font-weight:700}
+  .rank b{font-family:"Archivo",sans-serif;font-size:20px;color:var(--blue)}
+  .res-card{background:var(--paper);border-radius:16px;padding:20px 18px;margin-top:16px}
+  .res-card h3{font-size:15px;font-weight:900;margin-bottom:10px}
+  .res-card h3 .en{display:inline;margin-left:6px}
+  .msg p{font-size:15px;line-height:1.95}
+  .msg p + p{margin-top:12px}
+  .msg .en-block{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--sub);line-height:1.7}
+  .meter{margin-top:12px}
+  .meter-row{display:grid;grid-template-columns:92px 1fr 46px;gap:10px;align-items:center;font-size:14px;font-weight:700;margin-top:10px}
+  .meter-row .en{font-size:11px}
+  .track{height:12px;background:var(--bg);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--blue);border-radius:99px}
+  .meter-row .pc{font-family:"Archivo",sans-serif;font-weight:800;text-align:right}
+  .strong{font-size:14px;margin-top:14px;line-height:1.8}
+  .scale{width:100%;height:auto;display:block;margin-top:6px}
+  .actions{display:grid;gap:10px;margin-top:20px}
+  a.btn{text-decoration:none;text-align:center}
+  .disclaimer{font-size:12px;color:var(--sub);margin-top:18px;line-height:1.7;text-align:center}
+
+  @media(prefers-reduced-motion:reduce){.opt{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- 図形の模様（斜線）。どの図からも使えるよう、ここに1回だけ書いておく -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+      <rect width="7" height="7" style="fill:var(--paper)"/>
+      <line x1="0" y1="0" x2="0" y2="7" style="stroke:var(--ink);stroke-width:3.2"/>
+    </pattern>
+  </defs>
+</svg>
+
+<main class="app">
+
+  <!-- ===== はじめの画面 ===== -->
+  <section class="screen on" id="s-intro">
+    <div class="intro-top">
+      <div class="logo">IQ<br><b>CHECK</b></div>
+      <div class="logo-sub">知能の目安テスト<span class="en">A quick IQ estimate</span></div>
+    </div>
+    <div class="sample" id="sample" aria-hidden="true"></div>
+    <div class="facts">
+      <div class="fact"><b>10</b><span>問<span class="en">questions</span></span></div>
+      <div class="fact"><b>50<small style="font-size:14px">s</small></b><span>1問の時間<span class="en">per question</span></span></div>
+      <div class="fact"><b>0</b><span>言葉はほぼ不要<span class="en">words needed</span></span></div>
+    </div>
+    <p class="howto">図形や数の「法則」を見つけて、答えを1つタップしてください。分からないときは、勘でかまいません。
+      <span class="en">Find the rule and tap one answer. If you are not sure, just guess.</span></p>
+    <button class="btn" id="start">スタート<span class="en">Start</span></button>
+    <p class="fine">静かな場所で、集中できるときにどうぞ。<br>Best in a quiet place.</p>
+  </section>
+
+  <!-- ===== 問題の画面 ===== -->
+  <section class="screen" id="s-quiz">
+    <div class="bar-top">
+      <div class="qno" id="qno"></div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="timebar" id="timebar"><i id="timefill"></i></div>
+    <div class="card">
+      <p class="prompt" id="prompt"></p>
+      <div id="stage"></div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- ===== 結果の画面 ===== -->
+  <section class="screen" id="s-result">
+    <div class="res-head">
+      <div class="lbl">あなたのIQの目安<span class="en">Your estimated IQ</span></div>
+      <div class="iq"><small>IQ</small><span id="iqnum">0</span></div>
+      <div class="band" id="band"></div>
+      <div class="rank" id="rank"></div>
+    </div>
+
+    <div class="res-card msg" id="msg"></div>
+
+    <div class="res-card">
+      <h3>得意な分野<span class="en">Your strengths</span></h3>
+      <div class="meter" id="meter"></div>
+      <p class="strong" id="strong"></p>
+    </div>
+
+    <div class="res-card">
+      <h3>IQの分布<span class="en">How IQ is spread</span></h3>
+      <div id="scale"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="again">もう一度<span class="en">Try again</span></button>
+      <a class="btn ghost" href="index.html#works">ホームページへ<span class="en">Back to home</span></a>
+    </div>
+    <p class="disclaimer">このテストは楽しむための目安で、正式な知能検査ではありません。<br>This is a fun estimate, not an official IQ test.</p>
+  </section>
+</main>
+
+<script>
+/* =========================================================
+   図形を描く道具
+   どの図も「100×100のマス」の中に描く
+   ========================================================= */
+const FILL = {
+  solid:'style="fill:var(--ink);stroke:var(--ink);stroke-width:3;stroke-linejoin:round"',
+  empty:'style="fill:var(--paper);stroke:var(--ink);stroke-width:3;stroke-linejoin:round"',
+  half :'style="fill:url(#hatch);stroke:var(--ink);stroke-width:3;stroke-linejoin:round"'
+};
+
+function pts(list){ return list.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '); }
+
+// 図形1つ（中心0,0・半径R）
+function shape(kind, R, fill, rot){
+  const f = FILL[fill || 'solid'];
+  const t = rot ? ` transform="rotate(${rot})"` : '';
+  switch(kind){
+    case 'circle':   return `<circle r="${R}" ${f}/>`;
+    case 'square':   return `<rect x="${-R*.86}" y="${-R*.86}" width="${R*1.72}" height="${R*1.72}" ${f}${t}/>`;
+    case 'triangle': return `<polygon points="${pts([[0,-R],[R*.98,R*.72],[-R*.98,R*.72]])}" ${f}${t}/>`;
+    case 'diamond':  return `<polygon points="${pts([[0,-R],[R*.8,0],[0,R],[-R*.8,0]])}" ${f}${t}/>`;
+    case 'hex': {
+      const p=[]; for(let i=0;i<6;i++){const a=Math.PI/3*i;p.push([R*Math.cos(a),R*Math.sin(a)]);}
+      return `<polygon points="${pts(p)}" ${f}${t}/>`;
+    }
+    case 'arrow':    return `<polygon points="${pts([[0,-R],[R*.72,-R*.08],[R*.28,-R*.08],[R*.28,R],[-R*.28,R],[-R*.28,-R*.08],[-R*.72,-R*.08]])}" ${f}${t}/>`;
+    case 'dot':      return `<circle r="${R}" ${FILL.solid}/>`;
+  }
+  return '';
+}
+
+// 同じ図形をn個ならべる位置と大きさ
+const LAYOUT = {
+  1:{r:28,p:[[0,0]]},
+  2:{r:16,p:[[-20,0],[20,0]]},
+  3:{r:14,p:[[0,-17],[-19,15],[19,15]]},
+  4:{r:12,p:[[-17,-17],[17,-17],[-17,17],[17,17]]},
+  5:{r:10,p:[[-20,-20],[20,-20],[0,0],[-20,20],[20,20]]},
+  6:{r:10,p:[[-22,-14],[0,-14],[22,-14],[-22,14],[0,14],[22,14]]}
+};
+const DOTS = {
+  1:[[0,0]],2:[[-14,-14],[14,14]],3:[[-18,-18],[0,0],[18,18]],
+  4:[[-16,-16],[16,-16],[-16,16],[16,16]],5:[[-18,-18],[18,-18],[0,0],[-18,18],[18,18]],
+  6:[[-16,-20],[16,-20],[-16,0],[16,0],[-16,20],[16,20]],
+  8:[[-24,-12],[-8,-12],[8,-12],[24,-12],[-24,12],[-8,12],[8,12],[24,12]]
+};
+
+// マス1つの中身（spec＝図の設計図）
+function cell(spec){
+  let out = '';
+  if (spec.lines){                       // 線の組み合わせ
+    const a=22,b=78, L={T:[a,a,b,a],R:[b,a,b,b],B:[a,b,b,b],L:[a,a,a,b],D1:[a,a,b,b],D2:[b,a,a,b]};
+    out += `<rect x="${a}" y="${a}" width="${b-a}" height="${b-a}" style="fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:3 4"/>`;
+    spec.lines.forEach(k => { const s=L[k]; out += `<line x1="${s[0]}" y1="${s[1]}" x2="${s[2]}" y2="${s[3]}" style="stroke:var(--ink);stroke-width:6;stroke-linecap:round"/>`; });
+    return out;
+  }
+  if (spec.pair){                        // 2つの図形をならべる
+    return `<g transform="translate(30,50)">${shape(spec.pair[0],16,'solid')}</g><g transform="translate(70,50)">${shape(spec.pair[1],16,'solid')}</g>`;
+  }
+  if (spec.outer && spec.dots){          // 図形の中に点
+    const tri = spec.outer === 'triangle';
+    const list = tri ? [[0,-2],[-8,12],[8,12]] : DOTS[spec.dots].map(p => [p[0]*.7, p[1]*.7]);
+    out += `<g transform="translate(50,50)">${shape(spec.outer,36,'empty')}`;
+    list.forEach(p => out += `<g transform="translate(${p[0]},${p[1]})">${shape('dot',4)}</g>`);
+    return out + '</g>';
+  }
+  if (spec.outer){                       // 図形の中に図形
+    return `<g transform="translate(50,50)">${shape(spec.outer,34,'empty')}${shape(spec.inner,13,'solid')}</g>`;
+  }
+  if (spec.poly){                        // ブロックを組み合わせた形
+    return polySvg(spec.poly);
+  }
+  if (spec.s === 'dot'){
+    DOTS[spec.n].forEach(p => out += `<g transform="translate(${50+p[0]},${50+p[1]})">${shape('dot',7)}</g>`);
+    return out;
+  }
+  const lay = LAYOUT[spec.n || 1];
+  const R = lay.r * (spec.z || 1);
+  lay.p.forEach(p => {
+    out += `<g transform="translate(${50+p[0]},${50+p[1]})">${shape(spec.s, R, spec.f, spec.r)}</g>`;
+  });
+  return out;
+}
+function cellSvg(spec){ return `<svg viewBox="0 0 100 100" aria-hidden="true">${cell(spec)}</svg>`; }
+
+// 3×3のマス目（9マス目が「？」）
+function matrixSvg(cells){
+  let out = '<svg viewBox="-2 -2 304 304" aria-hidden="true">';
+  for(let i=0;i<9;i++){
+    const x=(i%3)*100, y=Math.floor(i/3)*100;
+    out += `<g transform="translate(${x},${y})">`;
+    if (i<8){
+      out += `<rect x="0" y="0" width="100" height="100" style="fill:var(--paper);stroke:var(--line);stroke-width:2"/>`;
+      out += cell(cells[i]);
+    } else {
+      out += `<rect x="4" y="4" width="92" height="92" rx="6" style="fill:#EEF2FF;stroke:var(--blue);stroke-width:2.5;stroke-dasharray:6 5"/>`;
+      out += `<text x="50" y="66" text-anchor="middle" style="font-family:Archivo,sans-serif;font-weight:900;font-size:46px;fill:var(--blue)">?</text>`;
+    }
+    out += '</g>';
+  }
+  return out + '</svg>';
+}
+
+/* ---------- ブロックの形（回転の問題） ---------- */
+function rot90(c){ return c.map(([x,y]) => [-y, x]); }              // 右に90度
+function mirror(c){ return c.map(([x,y]) => [-x, y]); }             // 裏返し
+function turn(c,k){ let r=c; for(let i=0;i<k;i++) r=rot90(r); return r; }
+function norm(c){
+  const mx=Math.min(...c.map(p=>p[0])), my=Math.min(...c.map(p=>p[1]));
+  return c.map(([x,y])=>[x-mx,y-my]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+}
+function key(c){ return JSON.stringify(norm(c)); }
+function polySvg(c){
+  c = norm(c);
+  const w=Math.max(...c.map(p=>p[0]))+1, h=Math.max(...c.map(p=>p[1]))+1;
+  const s = Math.min(66/w, 66/h, 17);
+  const ox = 50 - w*s/2, oy = 50 - h*s/2;
+  return c.map(([x,y]) =>
+    `<rect x="${ox+x*s}" y="${oy+y*s}" width="${s}" height="${s}" style="fill:var(--ink);stroke:var(--paper);stroke-width:1.5"/>`
+  ).join('');
+}
+
+/* =========================================================
+   問題（d＝難しさ 1〜3、cat＝shape:図形 / number:数）
+   opts の1番目が正解。表示するときに並びをまぜる
+   ========================================================= */
+const C='circle', S='square', T='triangle';
+const PIECES = {
+  F:[[1,0],[2,0],[0,1],[1,1],[1,2]],
+  N:[[0,0],[0,1],[0,2],[1,2],[1,3]],
+  Y:[[0,1],[1,0],[1,1],[1,2],[1,3]],
+  H:[[0,0],[1,0],[1,1],[2,1],[2,2],[2,3]],
+  L:[[0,0],[0,1],[0,2],[0,3],[1,3]],
+  P:[[0,0],[1,0],[0,1],[1,1],[0,2]]
+};
+
+function rotationQ(name, d, k){
+  const base = PIECES[name];
+  const right = {poly: turn(base, k)};
+  const ks = [0,1,2,3].filter(x => x !== k);                 // 裏返しの形を3つ
+  const wrong = ks.map(x => ({poly: turn(mirror(base), x)}));
+  return {type:'rotation', cat:'shape', d, base:{poly:base}, opts:[right, ...wrong]};
+}
+
+const BANK = [
+  // 1 横に行くほど1つずつ増える
+  {type:'matrix', cat:'shape', d:1,
+   cells:[{s:C,n:1},{s:C,n:2},{s:C,n:3},{s:S,n:1},{s:S,n:2},{s:S,n:3},{s:T,n:1},{s:T,n:2}],
+   opts:[{s:T,n:3},{s:T,n:2},{s:S,n:3},{s:C,n:3},{s:T,n:3,f:'empty'},{s:T,n:4}]},
+  // 2 3ずつ増える
+  {type:'number', cat:'number', d:1, seq:[3,6,9,12,'?'], opts:[15,14,16,18]},
+  // 3 たて＝形、よこ＝塗り方
+  {type:'matrix', cat:'shape', d:1,
+   cells:[{s:C,f:'empty'},{s:S,f:'empty'},{s:T,f:'empty'},{s:C,f:'solid'},{s:S,f:'solid'},{s:T,f:'solid'},{s:C,f:'half'},{s:S,f:'half'}],
+   opts:[{s:T,f:'half'},{s:T,f:'solid'},{s:T,f:'empty'},{s:S,f:'half'},{s:C,f:'half'},{s:'diamond',f:'half'}]},
+  // 4 点の数が奇数なのは1つだけ（5だけ奇数）
+  {type:'odd', cat:'shape', d:1,
+   opts:[{s:'dot',n:5},{s:'dot',n:2},{s:'dot',n:4},{s:'dot',n:6},{s:'dot',n:8}]},
+  // 5 回転
+  rotationQ('F', 2, 1),
+  // 6 2倍ずつ
+  {type:'number', cat:'number', d:1, seq:[2,4,8,16,'?'], opts:[32,24,30,20]},
+  // 7 矢印が45度ずつ回る
+  {type:'matrix', cat:'shape', d:2,
+   cells:[0,45,90,90,135,180,180,225].map(r=>({s:'arrow',r})),
+   opts:[270,225,90,0,315,180].map(r=>({s:'arrow',r}))},
+  // 8 外と中が同じ形でないのは1つ
+  {type:'odd', cat:'shape', d:2,
+   opts:[{outer:C,inner:S},{outer:C,inner:C},{outer:S,inner:S},{outer:T,inner:T},{outer:'hex',inner:'hex'}]},
+  // 9 どの行にも、形と数が1回ずつ
+  {type:'matrix', cat:'shape', d:2,
+   cells:[{s:C,n:1},{s:S,n:2},{s:T,n:3},{s:S,n:3},{s:T,n:1},{s:C,n:2},{s:T,n:2},{s:C,n:3}],
+   opts:[{s:S,n:1},{s:S,n:2},{s:S,n:3},{s:C,n:1},{s:T,n:1},{s:S,n:1,f:'empty'}]},
+  // 10 +2、−1のくり返し
+  {type:'number', cat:'number', d:2, seq:[3,5,4,6,5,'?'], opts:[7,4,6,8]},
+  // 11 回転
+  rotationQ('N', 2, 3),
+  // 12 左＋真ん中＝右
+  {type:'matrix', cat:'shape', d:2,
+   cells:[{s:'dot',n:1},{s:'dot',n:2},{s:'dot',n:3},{s:'dot',n:2},{s:'dot',n:2},{s:'dot',n:4},{s:'dot',n:3},{s:'dot',n:2}],
+   opts:[5,4,6,3,2,1].map(n=>({s:'dot',n}))},
+  // 13 平方数（同じ数どうしのかけ算）でないのは1つ
+  {type:'oddnum', cat:'number', d:2, opts:[48,16,25,36,64]},
+  // 14 前の2つを足す
+  {type:'number', cat:'number', d:2, seq:[1,1,2,3,5,8,'?'], opts:[13,11,12,16]},
+  // 15 回転
+  rotationQ('Y', 3, 2),
+  // 16 形・大きさ・塗り方の3つの法則
+  {type:'matrix', cat:'shape', d:3,
+   cells:[{s:C,z:1,f:'solid'},{s:S,z:.68,f:'solid'},{s:T,z:.45,f:'solid'},
+          {s:T,z:1,f:'empty'},{s:C,z:.68,f:'empty'},{s:S,z:.45,f:'empty'},
+          {s:S,z:1,f:'half'},{s:T,z:.68,f:'half'}],
+   opts:[{s:C,z:.45,f:'half'},{s:C,z:1,f:'half'},{s:C,z:.45,f:'solid'},{s:T,z:.45,f:'half'},{s:C,z:.45,f:'empty'},{s:S,z:.45,f:'half'}]},
+  // 17 増え方が2倍ずつ（+1,+2,+4,+8…）
+  {type:'number', cat:'number', d:3, seq:[2,3,5,9,17,'?'], opts:[33,25,34,31]},
+  // 18 左と真ん中を重ねて、両方にある線は消える
+  {type:'matrix', cat:'shape', d:3,
+   cells:[{lines:['T','L']},{lines:['T','R']},{lines:['L','R']},
+          {lines:['D1','B']},{lines:['B','R']},{lines:['D1','R']},
+          {lines:['T','D2']},{lines:['D2','L','B']}],
+   opts:[{lines:['T','L','B']},{lines:['T','D2','L','B']},{lines:['D2']},{lines:['T','L']},{lines:['L','B','R']},{lines:['T','R','B']}]},
+  // 19 回転
+  rotationQ('H', 3, 1),
+  // 20 数・向き・塗り方の3つの法則
+  {type:'matrix', cat:'shape', d:3,
+   cells:[{s:T,n:1,r:0,f:'solid'},{s:T,n:2,r:0,f:'empty'},{s:T,n:3,r:0,f:'solid'},
+          {s:T,n:1,r:90,f:'empty'},{s:T,n:2,r:90,f:'solid'},{s:T,n:3,r:90,f:'empty'},
+          {s:T,n:1,r:180,f:'solid'},{s:T,n:2,r:180,f:'empty'}],
+   opts:[{s:T,n:3,r:180,f:'solid'},{s:T,n:3,r:180,f:'empty'},{s:T,n:3,r:90,f:'solid'},{s:T,n:2,r:180,f:'solid'},{s:T,n:3,r:0,f:'solid'},{s:T,n:3,r:270,f:'solid'}]},
+  // 21 辺の数と点の数が合っていないのは1つ
+  {type:'odd', cat:'shape', d:3,
+   opts:[{outer:'hex',dots:5},{outer:T,dots:3},{outer:S,dots:4},{outer:'hex',dots:6},{outer:'diamond',dots:4}]},
+  // 22 行ごとに形、横に行くほど1つずつ減る
+  {type:'matrix', cat:'shape', d:1,
+   cells:[{s:'hex',n:3},{s:'hex',n:2},{s:'hex',n:1},{s:'diamond',n:3},{s:'diamond',n:2},{s:'diamond',n:1},{s:C,n:3},{s:C,n:2}],
+   opts:[{s:C,n:1},{s:C,n:2},{s:C,n:3},{s:'diamond',n:1},{s:'hex',n:1},{s:C,n:1,f:'empty'}]},
+  // 23 3ずつ減る
+  {type:'number', cat:'number', d:1, seq:[20,17,14,11,'?'], opts:[8,9,7,10]},
+  // 24 増え方が1つずつ大きくなる（+2,+3,+4…）
+  {type:'number', cat:'number', d:2, seq:[1,3,6,10,15,'?'], opts:[21,20,18,25]},
+  // 25 3倍ずつ
+  {type:'number', cat:'number', d:2, seq:[2,6,18,54,'?'], opts:[162,108,72,160]},
+  // 26 ×2、×3、×4…
+  {type:'number', cat:'number', d:3, seq:[1,2,6,24,120,'?'], opts:[720,240,600,144]},
+  // 27 同じ形のペアでないのは1つ
+  {type:'odd', cat:'shape', d:1,
+   opts:[{pair:[C,S]},{pair:[S,S]},{pair:[T,T]},{pair:[C,C]},{pair:['hex','hex']}]},
+  // 28 7の倍数でないのは1つ
+  {type:'oddnum', cat:'number', d:2, opts:[54,14,21,35,49]},
+  // 29 回転
+  rotationQ('L', 1, 1),
+  // 30 回転
+  rotationQ('P', 2, 3)
+];
+
+/* 10問ずつ3パターン。同じタイプの問題が続かないように並べてある
+   （数字はBANKの何番目か。0から数える） */
+const SETS = [
+  [0, 1, 3, 4, 8, 9, 7, 18, 16, 17],      // パターンA
+  [5, 26, 2, 28, 6, 13, 14, 25, 20, 15],  // パターンB
+  [21, 22, 12, 10, 11, 23, 29, 27, 24, 19] // パターンC
+];
+let QUESTIONS = SETS[0].map(i => BANK[i]);
+
+// 前回と違うパターンを選ぶ（覚えておけないときは、ただのランダム）
+function choosePattern(){
+  let last = -1;
+  try { last = parseInt(localStorage.getItem('iqcheck-last'), 10); } catch(e){}
+  const choices = [0,1,2].filter(i => i !== last);
+  const pick = choices[Math.floor(Math.random()*choices.length)];
+  try { localStorage.setItem('iqcheck-last', String(pick)); } catch(e){}
+  return pick;
+}
+const PROMPTS = {
+  matrix:  ['？に入るのはどれ？', 'Which one fits the ?'],
+  number:  ['？に入る数は？', 'Which number fits the ?'],
+  odd:     ['仲間はずれはどれ？', 'Which one is different?'],
+  oddnum:  ['仲間はずれの数はどれ？', 'Which number is different?'],
+  rotation:['回すと同じになるのはどれ？（裏返しはダメ）', 'Which is the same shape, only rotated? (Not flipped)']
+};
+
+/* =========================================================
+   進め方
+   ========================================================= */
+const TIME = 50;
+const $ = id => document.getElementById(id);
+let order, qi, answers, timer, left, locked, startAt;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  window.scrollTo(0,0);
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function start(){
+  QUESTIONS = SETS[choosePattern()].map(i => BANK[i]);
+  qi = 0; answers = []; startAt = Date.now();
+  show('s-quiz');
+  render();
+}
+
+function render(){
+  const q = QUESTIONS[qi];
+  locked = false;
+  $('qno').innerHTML = `Q${qi+1}<small> / ${QUESTIONS.length}</small>`;
+  const p = PROMPTS[q.type];
+  $('prompt').innerHTML = `${p[0]}<span class="en">${p[1]}</span>`;
+
+  // 問題の図
+  const stage = $('stage');
+  if (q.type === 'matrix') stage.innerHTML = `<div class="figure">${matrixSvg(q.cells)}</div>`;
+  else if (q.type === 'rotation') stage.innerHTML = `<div class="figure" style="max-width:150px">${cellSvg(q.base)}</div>`;
+  else if (q.type === 'number') stage.innerHTML = `<div class="seq">${q.seq.map(v => v==='?' ? '<span class="q">?</span>' : v).join(' ')}</div>`;
+  else stage.innerHTML = '';
+
+  // 選択肢（1番目が正解。まぜて並べる）
+  const list = shuffle(q.opts.map((o,i) => ({o, right: i===0})));
+  const box = $('opts');
+  const isText = (q.type === 'number' || q.type === 'oddnum');
+  box.className = 'opts ' + (q.type === 'rotation' || q.type === 'number' ? 'c2' : 'c3');
+  box.innerHTML = '';
+  list.forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt' + (isText ? ' text' : '');
+    if (isText){ b.textContent = item.o; b.setAttribute('aria-label', String(item.o)); }
+    else { b.innerHTML = `<span class="lab">${'ABCDEF'[i]}</span>` + cellSvg(item.o); b.setAttribute('aria-label', '選択肢 ' + 'ABCDEF'[i]); }
+    b.addEventListener('click', () => pick(b, item.right));
+    box.appendChild(b);
+  });
+
+  // 時間
+  left = TIME;
+  tick();
+  clearInterval(timer);
+  timer = setInterval(() => { left -= .1; tick(); if (left <= 0) pick(null, false); }, 100);
+}
+
+function tick(){
+  const r = Math.max(0, left / TIME);
+  $('timefill').style.transform = `scaleX(${r})`;
+  const hurry = left <= 10;
+  $('timebar').classList.toggle('hurry', hurry);
+  $('clock').classList.toggle('hurry', hurry);
+  $('clock').textContent = Math.ceil(Math.max(0,left)) + 's';
+}
+
+function pick(btn, right){
+  if (locked) return;
+  locked = true;
+  clearInterval(timer);
+  if (btn) btn.classList.add('picked');
+  answers.push({right, d: QUESTIONS[qi].d, cat: QUESTIONS[qi].cat});
+  setTimeout(() => {
+    qi++;
+    if (qi < QUESTIONS.length) render(); else result();
+  }, btn ? 260 : 400);
+}
+
+/* =========================================================
+   結果
+   ========================================================= */
+// 正規分布で「上位何%か」を出す
+function erf(x){ const s=Math.sign(x); x=Math.abs(x);
+  const t=1/(1+.3275911*x); const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x);
+  return s*y; }
+function topPercent(iq){ return 100 * (1 - .5*(1+erf((iq-100)/15/Math.SQRT2))); }
+
+function iqFrom(answers){
+  const max = QUESTIONS.reduce((a,q)=>a+q.d, 0);
+  const got = answers.reduce((a,x)=>a+(x.right?x.d:0), 0);
+  const r = got / max;
+  // 換算表（正解の割合 → IQ）。全問正解で120＝このテストで測れる上限
+  const P = [[0,70],[.3,85],[.6,100],[.85,110],[1,120]];
+  let iq = 145;
+  for (let i=1;i<P.length;i++){
+    if (r <= P[i][0]){ const [r0,v0]=P[i-1],[r1,v1]=P[i]; iq = v0 + (v1-v0)*(r-r0)/(r1-r0); break; }
+  }
+  return Math.round(Math.min(120, Math.max(70, iq)));
+}
+
+const BANDS = [
+  {min:120, top:true, jp:'測定不能（IQ120以上）', en:'Off the scale (120+)',
+   msg:['全問正解です。このテストで測れるいちばん上、IQ120に届きました。IQ120以上は10人に1人ほどの、とても優秀な水準です。',
+        'あなたの本当の力は、このテストでは測りきれません。初めて見る問題でも、筋道を立てて答えにたどり着ける力があります。'],
+   enmsg:'Perfect score! You reached the top of this test. IQ 120+ is about the top 10%. Your real level is beyond what this test can measure.'},
+  {min:110, jp:'平均より上', en:'Above average',
+   msg:['平均よりはっきり上の、よい結果です。4人に1人ほどがこの水準です。',
+        '考える力がしっかり身についています。時間に余裕があれば、さらに上を狙えるはずです。'],
+   enmsg:'Great job! About 1 in 4 people score this high. You have strong thinking skills.'},
+  {min:90, jp:'平均', en:'Average',
+   msg:['いちばん多くの人がいる、平均的な水準です。2人に1人がこの範囲（IQ90〜109）に入ります。',
+        '体調や集中の具合だけで、5〜10ほど上下するのも普通です。よく眠れた日に、もう一度試してみるのもおすすめです。'],
+   enmsg:'Average. Half of all people are in this range. Your score can change by 5–10 points with sleep and focus.'},
+  {min:85, jp:'平均よりやや下', en:'Low average',
+   msg:['平均のすぐ下の水準です。',
+        'スマホの小さな画面や制限時間、こうした問題に慣れていないことだけでも、このくらいの差は出ます。落ち着いた時間に、もう一度試してみてください。'],
+   enmsg:'Low average. A small screen or time pressure can easily lower your score this much. Try again when you feel relaxed.'},
+  {min:0, jp:'境界知能の目安', en:'Borderline range',
+   msg:['今回の結果は、「境界知能」と呼ばれる範囲（IQ70〜84）の目安になりました。これは病気の名前ではありません。7人に1人ほどがこの範囲に入るといわれていて、決してめずらしいことではありません。',
+        'ただし、これは10問だけの簡単なテストです。疲れや眠気、スマホの画面、初めての問題形式、時間制限で、点数は大きく下がることがあります。この結果だけで、あなたのことは決まりません。',
+        'もし、勉強や仕事、人づきあいで「なぜか自分だけうまくいかない」と感じることが多いなら、病院や専門の相談窓口で正式な検査を受けてみてください。本当の数字が分かるだけでなく、自分に合ったやり方や支えが見つかります。苦手を知ることは、自分を責めないための第一歩です。',
+        'それに、IQはやさしさや努力、人を笑顔にする力までは測れません。'],
+   enmsg:'About 1 in 7 people are in this range. It is not an illness. This short test is only a rough guide — being tired or rushed can lower your score a lot. If daily life often feels harder for you than for others, a professional test can give you a true result and the right support. IQ does not measure kindness, effort, or talent.'}
+];
+
+function result(){
+  const iq = iqFrom(answers);
+  const band = BANDS.find(b => iq >= b.min);
+  const correct = answers.filter(a=>a.right).length;
+  const secs = Math.round((Date.now()-startAt)/1000);
+  show('s-result');
+
+  // 数字がカウントアップする
+  const el = $('iqnum'); const t0 = performance.now(); const dur = 1100;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function up(now){
+    const k = reduce ? 1 : Math.min(1,(now-t0)/dur);
+    el.textContent = Math.round(iq * (1 - Math.pow(1-k,3)));
+    if (k < 1) requestAnimationFrame(up);
+    else if (iq >= 120) el.textContent = '120+';
+  })(t0);
+
+  $('band').className = 'band' + (band.top ? ' top' : '');
+  $('band').innerHTML = `${band.jp}<span class="en">${band.en}</span>`;
+
+  if (iq >= 120){
+    $('rank').innerHTML = `100人中、上から<b>10</b>番以内<span class="en">Top 10% or higher · 正解 ${correct}/${QUESTIONS.length} · ${Math.floor(secs/60)}分${secs%60}秒</span>`;
+  } else if (iq >= 90){
+    const tp = topPercent(iq);
+    const n = Math.max(1, Math.round(tp));
+    $('rank').innerHTML = `100人中、上から約<b>${n}</b>番目<span class="en">About top ${n}% · 正解 ${correct}/${QUESTIONS.length} · ${Math.floor(secs/60)}分${secs%60}秒</span>`;
+  } else {
+    $('rank').innerHTML = `<span class="en">正解 ${correct}/${QUESTIONS.length} · ${Math.floor(secs/60)}分${secs%60}秒</span>`;
+  }
+
+  $('msg').innerHTML = band.msg.map(p => `<p>${p}</p>`).join('') + `<p class="en-block">${band.enmsg}</p>`;
+
+  // 得意分野
+  const part = c => { const a = answers.filter(x=>x.cat===c); return Math.round(100*a.filter(x=>x.right).length/a.length); };
+  const shp = part('shape'), num = part('number');
+  $('meter').innerHTML =
+    `<div class="meter-row"><span>図形の力<span class="en">Shapes</span></span><div class="track"><i style="width:${shp}%"></i></div><span class="pc">${shp}%</span></div>`+
+    `<div class="meter-row"><span>数の力<span class="en">Numbers</span></span><div class="track"><i style="width:${num}%"></i></div><span class="pc">${num}%</span></div>`;
+  let s;
+  if (Math.abs(shp-num) < 12) s = ['図形と数、どちらもバランスよく解けています。','You are balanced in shapes and numbers.'];
+  else if (shp > num) s = ['図形の法則を見抜くのが得意です。目で見て考える力が強いタイプです。','You are strong with shapes and visual thinking.'];
+  else s = ['数の並びの法則を見抜くのが得意です。筋道を立てて考える力が強いタイプです。','You are strong with numbers and step-by-step thinking.'];
+  $('strong').innerHTML = `${s[0]}<span class="en">${s[1]}</span>`;
+
+  $('scale').innerHTML = scaleSvg(iq);
+}
+
+// IQの分布の山と、自分の位置
+function scaleSvg(iq){
+  const W=320,H=130,x0=14,x1=306, lo=55, hi=145;
+  const X = v => x0 + (v-lo)/(hi-lo)*(x1-x0);
+  const Y = v => 100 - 82*Math.exp(-((v-100)**2)/(2*15*15));
+  let d = `M${X(lo)},100`;
+  for(let v=lo; v<=hi; v++) d += ` L${X(v).toFixed(1)},${Y(v).toFixed(1)}`;
+  d += ` L${X(hi)},100 Z`;
+  const me = Math.min(hi, Math.max(lo, iq));
+  let ticks = '';
+  [70,85,100,115,130,145].forEach(v => {
+    ticks += `<line x1="${X(v)}" y1="100" x2="${X(v)}" y2="105" style="stroke:var(--sub)"/>`+
+             `<text x="${X(v)}" y="119" text-anchor="middle" style="font-family:Archivo,sans-serif;font-size:11px;font-weight:800;fill:var(--sub)">${v}</text>`;
+  });
+  return `<svg class="scale" viewBox="0 0 ${W} ${H}" role="img" aria-label="IQの分布の中での位置">
+    <path d="${d}" style="fill:#DCE3F4"/>
+    <line x1="${x0}" y1="100" x2="${x1}" y2="100" style="stroke:var(--sub)"/>
+    ${ticks}
+    <line x1="${X(me)}" y1="${Y(me)-14}" x2="${X(me)}" y2="100" style="stroke:var(--blue);stroke-width:3"/>
+    <circle cx="${X(me)}" cy="${Y(me)-14}" r="6" style="fill:var(--blue)"/>
+    <text x="${Math.min(x1-16, Math.max(x0+16, X(me)))}" y="${Y(me)-26}" text-anchor="middle" style="font-family:Archivo,sans-serif;font-size:13px;font-weight:900;fill:var(--blue)">YOU</text>
+  </svg>`;
+}
+
+// はじめの画面の見本（1問目の図）
+$('sample').innerHTML = matrixSvg(BANK[0].cells);
+
+$('start').addEventListener('click', start);
+$('again').addEventListener('click', start);
+</script>
+</body>
+</html>
