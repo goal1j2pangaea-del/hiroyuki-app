@@ -590,6 +590,7 @@ const BANDS = [
 ];
 
 function result(){
+  if (window.SND) SND.fx('finish');
   const iq = iqFrom(answers);
   const band = BANDS.find(b => iq >= b.min);
   const correct = answers.filter(a=>a.right).length;
@@ -666,5 +667,117 @@ $('sample').innerHTML = matrixSvg(BANK[0].cells);
 $('start').addEventListener('click', start);
 $('again').addEventListener('click', start);
 </script>
+
+<!-- ===== 音（効果音とBGM）：音のファイルは使わず、その場で音を作る ===== -->
+<style>
+  body{padding-bottom:64px}
+  .snd-box{position:fixed;right:12px;bottom:12px;z-index:60;display:flex;gap:8px}
+  .snd-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0}
+  .snd-btn svg{width:22px;height:22px;display:block}
+  .snd-btn.off{opacity:.45}
+  .snd-btn:focus-visible{outline:3px solid #888;outline-offset:2px}
+</style>
+<div class="snd-box">
+  <button type="button" class="snd-btn off" id="snd-bgm" aria-label="BGM オン・オフ" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+  </button>
+  <button type="button" class="snd-btn" id="snd-fx" aria-label="効果音 オン・オフ" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+</div>
+<script>
+const SND = (() => {
+  const STYLE = 'blue';      // BGMの雰囲気（アプリごとに変える）
+  const KEY = 'snd-' + STYLE;
+  let ctx = null, master = null, fxOn = true, bgmOn = false, bgmTimer = null, step = 0, nextT = 0;
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s.fx === false) fxOn = false; } catch(e){}
+
+  function init(){
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return true;
+  }
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);   // 音の高さ（MIDI番号→周波数）
+
+  // 1つの音を鳴らす
+  function tone(note, t, dur, vol, type, attack){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = hz(note);
+    const a = attack || .005;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+  }
+
+  // ---------- 効果音 ----------
+  const FX = {
+    tap:    t => tone(84, t, .07, .07, 'triangle'),
+    ok:     t => { tone(76, t, .18, .09, 'triangle'); tone(83, t + .09, .25, .09, 'triangle'); },
+    ng:     t => { tone(55, t, .22, .08, 'square'); tone(52, t + .1, .25, .06, 'square'); },
+    finish: t => { [72,76,79,84].forEach((n,i) => tone(n, t + i*.11, .5, .08, 'triangle')); },
+    pad:    (t, n) => tone(n, t, .25, .1, 'sine')
+  };
+  function fx(name, arg){
+    if (!fxOn || !init()) return;
+    FX[name](ctx.currentTime + .01, arg);
+  }
+
+  // ---------- BGM（ゆっくりした和音のくり返し） ----------
+  const SONGS = {
+    // [和音の並び（MIDI番号）, 1つの和音の長さ（秒）, 上で鳴る音の候補]
+    blue:  [[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,59]], 4, [72,74,76,79,81,83]],   // 明るく考える感じ
+    wa:    [[[50,57,62,65],[48,55,60,64],[46,53,58,62],[45,52,57,64]], 4.5, [74,76,77,81,84,86]], // 和風（都節っぽい）
+    yo:    [[[50,57,62,66],[47,54,59,62],[45,52,57,61],[43,50,55,59]], 4.5, [74,76,78,81,83,86]], // 明るい和風（ヨナ抜き）
+    calm:  [[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]], 6, [69,72,76]]             // 控えめ（記憶のテスト用）
+  };
+  function schedule(){
+    const song = SONGS[STYLE] || SONGS.blue;
+    const [chords, len, mel] = song;
+    while (nextT < ctx.currentTime + 1.5){
+      const ch = chords[step % chords.length];
+      ch.forEach(n => tone(n, nextT, len * 1.1, .022, 'sine', 1.2));         // やわらかい和音
+      const notes = STYLE === 'calm' ? 2 : 4;
+      for (let i = 0; i < notes; i++){                                         // ぽつぽつ鳴る高い音
+        if (Math.random() < .7) tone(mel[Math.floor(Math.random()*mel.length)], nextT + i*(len/notes) + .2, 1.6, .016, 'triangle', .02);
+      }
+      nextT += len; step++;
+    }
+  }
+  function startBgm(){
+    if (!init()) return;
+    nextT = ctx.currentTime + .1; step = 0;
+    schedule(); bgmTimer = setInterval(schedule, 500);
+  }
+  function stopBgm(){ clearInterval(bgmTimer); bgmTimer = null; }
+
+  // ---------- ボタン ----------
+  const bBgm = document.getElementById('snd-bgm'), bFx = document.getElementById('snd-fx');
+  function paint(){
+    bBgm.classList.toggle('off', !bgmOn); bBgm.setAttribute('aria-pressed', bgmOn);
+    bFx.classList.toggle('off', !fxOn);   bFx.setAttribute('aria-pressed', fxOn);
+  }
+  bBgm.addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; bgmOn ? startBgm() : stopBgm(); paint(); });
+  bFx.addEventListener('click', e => {
+    e.stopPropagation(); fxOn = !fxOn; paint();
+    try { localStorage.setItem(KEY, JSON.stringify({fx: fxOn})); } catch(err){}
+    if (fxOn) fx('tap');
+  });
+  paint();
+
+  // ボタンやリンクを押したら、タップ音
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button, a.btn');
+    if (!b || b.classList.contains('snd-btn') || b.dataset.noTap !== undefined) return;
+    fx('tap');
+  });
+
+  return { fx };
+})();
+</script>
+
 </body>
 </html>

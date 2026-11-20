@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOTOBA IQ｜言葉の力テスト</title>
+<meta name="description" content="言葉の関係・意味・仲間分け・共通点の10問で、言葉の力（言語理解）の目安が分かるテスト。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Shippori+Mincho:wght@600;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#ECEEF2;       /* 背景 */
+    --paper:#FFFFFF;    /* 問題用紙 */
+    --ink:#1B2236;      /* 文字 */
+    --sub:#5E667A;      /* 補足 */
+    --line:#D5DAE3;     /* 罫線 */
+    --shu:#B8342A;      /* 朱色（ボタン・アクセント） */
+    --shu-soft:#FBEDEB; /* うすい朱 */
+    --gold:#9A6A00;     /* ほめる色 */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif;
+    font-size:16px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+    min-height:100svh;
+  }
+  .app{max-width:480px;margin:0 auto;padding:18px 16px 40px}
+  .mincho{font-family:"Shippori Mincho","Hiragino Mincho ProN",serif}
+  .num{font-family:"Archivo",sans-serif}
+  button{font:inherit;color:inherit}
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ===== はじめの画面 ===== */
+  .intro-top{padding:30px 4px 22px}
+  .logo{display:flex;align-items:flex-end;gap:14px}
+  .logo-kanji{font-family:"Shippori Mincho",serif;font-weight:800;font-size:92px;line-height:.9;color:var(--ink)}
+  .logo-en{font-family:"Archivo",sans-serif;font-weight:900;font-size:22px;line-height:1.1;color:var(--shu);padding-bottom:8px}
+  .logo-sub{font-size:20px;font-weight:900;margin-top:16px}
+  .logo-sub small{display:block;font-size:13.5px;font-weight:500;color:var(--sub);margin-top:2px}
+  .sample{background:var(--paper);border-radius:14px;padding:22px 18px;margin:4px 0 16px;text-align:center}
+  .sample .mincho{font-size:30px;font-weight:800;line-height:1.6}
+  .sample .hint{font-size:12.5px;color:var(--sub);margin-top:6px}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .fact{background:var(--paper);border-radius:12px;padding:12px 8px;text-align:center}
+  .fact b{display:block;font-family:"Archivo",sans-serif;font-size:26px;font-weight:900;line-height:1.1}
+  .fact span{font-size:12px;font-weight:700;display:block;margin-top:4px;line-height:1.4}
+  .howto{font-size:14.5px;margin-bottom:22px;padding:0 4px}
+  .btn{
+    display:block;width:100%;border:none;border-radius:14px;cursor:pointer;
+    background:var(--shu);color:#fff;font-weight:900;font-size:18px;padding:16px;line-height:1.3;
+  }
+  .btn:focus-visible,.opt:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .btn.ghost{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+  .fine{font-size:12px;color:var(--sub);margin-top:14px;text-align:center;line-height:1.6}
+
+  /* ===== 問題の画面 ===== */
+  .bar-top{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 8px}
+  .qno{font-family:"Archivo",sans-serif;font-weight:900;font-size:22px}
+  .qno small{font-size:14px;color:var(--sub);font-weight:800}
+  .kind{font-size:12.5px;font-weight:700;color:var(--shu);margin-left:8px;font-family:"Noto Sans JP",sans-serif}
+  .clock{font-family:"Archivo",sans-serif;font-weight:800;font-size:16px;color:var(--sub)}
+  .clock.hurry{color:var(--shu)}
+  .timebar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .timebar i{display:block;height:100%;background:var(--ink);width:100%;transform-origin:left}
+  .timebar.hurry i{background:var(--shu)}
+  .card{background:var(--paper);border-radius:16px;padding:20px 16px 16px}
+  .prompt{font-size:16.5px;font-weight:900;line-height:1.5}
+  .prompt small{display:block;font-size:13px;font-weight:500;color:var(--sub);margin-top:2px}
+  .stage{
+    font-family:"Shippori Mincho",serif;font-weight:800;text-align:center;
+    padding:22px 0 8px;line-height:1.55;
+  }
+  .stage .big{font-size:38px}
+  .stage .mid{font-size:28px}
+  .stage .eq{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;font-size:28px;max-width:300px;margin:0 auto}
+  .stage .eq .c{color:var(--sub);font-size:22px}
+  .stage .eq .l{text-align:right}
+  .stage .eq .r{text-align:left}
+  .stage .q{color:var(--shu)}
+  .stage .ruby{display:block;font-family:"Noto Sans JP",sans-serif;font-size:13px;font-weight:500;color:var(--sub);margin-top:2px}
+  .opts{display:grid;gap:10px;margin-top:18px}
+  .opts.c2{grid-template-columns:repeat(2,1fr)}
+  .opts.c1{grid-template-columns:1fr}
+  .opt{
+    background:var(--paper);border:2px solid var(--line);border-radius:12px;cursor:pointer;
+    padding:14px 14px;text-align:left;font-size:16px;font-weight:700;line-height:1.5;
+    display:flex;gap:12px;align-items:center;transition:border-color .12s, transform .12s;
+  }
+  .opts.c2 .opt{justify-content:center;text-align:center;font-family:"Shippori Mincho",serif;font-size:22px;font-weight:800;padding:16px 8px}
+  .opt .lab{font-family:"Archivo",sans-serif;font-size:12px;font-weight:800;color:var(--sub);flex:none;width:14px}
+  .opts.c2 .opt .lab{display:none}
+  .opt.picked{border-color:var(--shu);background:var(--shu-soft);transform:scale(.97)}
+  @media(hover:hover){.opt:hover{border-color:var(--shu)}}
+
+  /* ===== 結果の画面 ===== */
+  .res-head{padding:26px 4px 8px}
+  .res-head .lbl{font-size:15px;font-weight:700}
+  .res-head .lbl small{display:block;font-size:12.5px;color:var(--sub);font-weight:500}
+  .iq{font-family:"Archivo",sans-serif;font-weight:900;font-size:108px;line-height:1;letter-spacing:-.03em;margin-top:4px}
+  .iq small{font-size:26px;letter-spacing:0;margin-right:6px;color:var(--sub);font-weight:800}
+  .band{font-size:24px;font-weight:900;line-height:1.35;margin-top:10px}
+  .band.top{color:var(--gold)}
+  .rank{margin-top:10px;font-size:15px;font-weight:700}
+  .rank b{font-family:"Archivo",sans-serif;font-size:20px;color:var(--shu)}
+  .rank small{display:block;font-size:12.5px;color:var(--sub);font-weight:500;margin-top:2px}
+  .res-card{background:var(--paper);border-radius:16px;padding:20px 18px;margin-top:16px}
+  .res-card h3{font-size:15px;font-weight:900;margin-bottom:10px}
+  .msg p{font-size:15px;line-height:1.95}
+  .msg p + p{margin-top:12px}
+  .meter-row{display:grid;grid-template-columns:96px 1fr 44px;gap:10px;align-items:center;font-size:14px;font-weight:700;margin-top:10px}
+  .track{height:12px;background:var(--bg);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--shu);border-radius:99px}
+  .meter-row .pc{font-family:"Archivo",sans-serif;font-weight:800;text-align:right}
+  .strong{font-size:14px;margin-top:14px;line-height:1.8}
+  .review{list-style:none;margin-top:4px}
+  .review li{padding:12px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.7}
+  .review li:first-child{border-top:none}
+  .review .mark{font-weight:900;margin-right:6px}
+  .review .ok{color:#2E7D4F}
+  .review .ng{color:var(--shu)}
+  .review .ans{display:block;color:var(--sub);font-size:13px}
+  .actions{display:grid;gap:10px;margin-top:20px}
+  a.btn{text-decoration:none;text-align:center}
+  .disclaimer{font-size:12px;color:var(--sub);margin-top:18px;line-height:1.7;text-align:center}
+  @media(prefers-reduced-motion:reduce){.opt{transition:none}}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- ===== はじめの画面 ===== -->
+  <section class="screen on" id="s-intro">
+    <div class="intro-top">
+      <div class="logo"><span class="logo-kanji">言葉</span><span class="logo-en">KOTOBA<br>IQ</span></div>
+      <div class="logo-sub">言葉の力テスト<small>言語理解の目安を測ります</small></div>
+    </div>
+    <div class="sample" aria-hidden="true">
+      <div class="mincho">右：左 ＝ 上：<span style="color:var(--shu)">？</span></div>
+      <div class="hint">たとえば、こんな問題です</div>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>10</b><span>問</span></div>
+      <div class="fact"><b>40<small style="font-size:14px">s</small></b><span>1問の時間</span></div>
+      <div class="fact"><b>4</b><span>種類の問題</span></div>
+    </div>
+    <p class="howto">言葉の関係・言葉の意味・仲間はずれ・共通点の4種類の問題が出ます。いちばんふさわしい答えを1つ選んでください。分からないときは、勘でかまいません。</p>
+    <button class="btn" id="start">スタート</button>
+    <p class="fine">日本語が分かる方向けのテストです。</p>
+  </section>
+
+  <!-- ===== 問題の画面 ===== -->
+  <section class="screen" id="s-quiz">
+    <div class="bar-top">
+      <div class="qno" id="qno"></div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="timebar" id="timebar"><i id="timefill"></i></div>
+    <div class="card">
+      <p class="prompt" id="prompt"></p>
+      <div class="stage" id="stage"></div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- ===== 結果の画面 ===== -->
+  <section class="screen" id="s-result">
+    <div class="res-head">
+      <div class="lbl">あなたの言葉の力（IQの目安）</div>
+      <div class="iq"><small>IQ</small><span id="iqnum">0</span></div>
+      <div class="band" id="band"></div>
+      <div class="rank" id="rank"></div>
+    </div>
+
+    <div class="res-card msg" id="msg"></div>
+
+    <div class="res-card">
+      <h3>問題の種類ごとの正解率</h3>
+      <div id="meter"></div>
+      <p class="strong" id="strong"></p>
+    </div>
+
+    <div class="res-card">
+      <h3>答え合わせ</h3>
+      <ul class="review" id="review"></ul>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="again">もう一度（別の問題）</button>
+      <a class="btn ghost" href="index.html#works">ホームページへ</a>
+    </div>
+    <p class="disclaimer">このテストは楽しむための目安で、正式な知能検査ではありません。</p>
+  </section>
+</main>
+
+<script>
+/* =========================================================
+   問題
+   type：analogy＝言葉の関係 / odd＝仲間はずれ / vocab＝言葉の意味 / common＝共通点
+   d：難しさ（1〜3）
+   opts の1番目が正解。表示するときに並びをまぜる
+   ========================================================= */
+const BANK = {
+  // ---------- 言葉の関係 ----------
+  A1:{type:'analogy', d:1, q:['医者','病院','先生'], opts:['学校','教科書','生徒','授業']},
+  A2:{type:'analogy', d:1, q:['鳥','翼','魚'], opts:['ひれ','うろこ','水','えら']},
+  A3:{type:'analogy', d:1, q:['朝','夜','夏'], opts:['冬','秋','春','暑さ']},
+  A4:{type:'analogy', d:2, q:['ペン','作家','包丁'], opts:['料理人','台所','野菜','刃物']},
+  A5:{type:'analogy', d:2, q:['種','木','卵'], opts:['鶏','殻','巣','黄身']},
+  A6:{type:'analogy', d:2, q:['温度計','温度','時計'], opts:['時間','針','秒','腕']},
+  A7:{type:'analogy', d:3, q:['序章','小説','前奏'], opts:['楽曲','指揮者','楽譜','終章']},
+  A8:{type:'analogy', d:3, q:['謙虚','傲慢','寛容'], opts:['狭量','寛大','慈悲','忍耐'], ruby:'けんきょ：ごうまん ＝ かんよう：？'},
+  A9:{type:'analogy', d:3, q:['冗長','簡潔','曖昧'], opts:['明確','複雑','不明','漠然'], ruby:'じょうちょう：かんけつ ＝ あいまい：？'},
+
+  // ---------- 仲間はずれ ----------
+  O1:{type:'odd', d:1, opts:['にんじん','りんご','みかん','ぶどう','もも']},
+  O2:{type:'odd', d:1, opts:['鍋','鉛筆','消しゴム','定規','ノート']},
+  O3:{type:'odd', d:2, opts:['眠る','喜ぶ','悲しむ','怒る','驚く']},
+  O4:{type:'odd', d:2, opts:['小説','俳句','短歌','川柳','和歌']},
+  O5:{type:'odd', d:3, opts:['俄然','漸次','徐々に','次第に','段々']},
+  O6:{type:'odd', d:3, opts:['一生懸命','杞憂','蛇足','矛盾','推敲']},
+
+  // ---------- 言葉の意味 ----------
+  V1:{type:'vocab', d:1, word:'おおらか', opts:['心が広く、細かいことにこだわらない','声が大きく、よく通る','体が大きく、力が強い','落ち着きがなく、そわそわしている']},
+  V2:{type:'vocab', d:1, word:'うつむく', opts:['顔を下に向ける','後ろを振り向く','体を横にする','目を閉じる']},
+  V3:{type:'vocab', d:1, word:'ためらう', opts:['迷って、なかなか決められない','急いで、すぐに行う','きっぱりと断る','楽しみに待つ']},
+  V4:{type:'vocab', d:2, word:'潔い', ruby:'いさぎよい', opts:['未練がなく、思い切りがよい','清潔で、美しい','勇ましく、強い','正直で、嘘をつかない']},
+  V5:{type:'vocab', d:2, word:'おもむろに', opts:['ゆっくりと、落ち着いて','突然に','思いがけず','こっそりと']},
+  V6:{type:'vocab', d:2, word:'やぶさかでない', opts:['喜んでそうする気持ちがある','どうしても気が進まない','少しも困っていない','断る理由を探している']},
+  V7:{type:'vocab', d:3, word:'姑息', ruby:'こそく', original:true, opts:['一時しのぎで、間に合わせであること','ひきょうであること','ずる賢いこと','けちであること']},
+  V8:{type:'vocab', d:3, word:'憮然', ruby:'ぶぜん', original:true, opts:['失望して、ぼんやりしている様子','腹を立てている様子','堂々としている様子','退屈そうな様子']},
+  V9:{type:'vocab', d:3, word:'忸怩たる思い', ruby:'じくじたるおもい', opts:['自分の行いを恥ずかしく思う気持ち','相手をうらむ気持ち','先が見えず不安な気持ち','別れが名残惜しい気持ち']},
+
+  // ---------- 共通点 ----------
+  C1:{type:'common', d:1, pair:['時計','定規'], opts:['何かを測る道具','電池で動く','文房具である','丸い形をしている']},
+  C2:{type:'common', d:1, pair:['船','飛行機'], opts:['人や物を運ぶ乗り物','海の上を進む','空を飛ぶ','翼がある']},
+  C3:{type:'common', d:2, pair:['詩','絵画'], opts:['人の心を表す芸術作品','紙に書く','色を使う','言葉を使う']},
+  C4:{type:'common', d:2, pair:['種','卵'], opts:['新しい命が生まれるもと','土の中で育つ','親が温める','丸い形をしている']},
+  C5:{type:'common', d:3, pair:['法律','文法'], opts:['正しさの基準となる決まり','国会で決められる','破ると罰がある','一度決まると変わらない']},
+  C6:{type:'common', d:3, pair:['ワクチン','避難訓練'], opts:['前もって備えるためのもの','病院で行う','学校でだけ行う','一度で効果が一生続く']}
+};
+
+/* 10問ずつ3パターン。どのパターンにも4種類が入り、同じ種類が続かない */
+const SETS = [
+  ['A1','O1','V1','C3','A4','O4','V4','A7','C6','V7'],
+  ['V2','A2','O2','C1','V5','A5','V8','O6','A8','C5'],
+  ['A3','C2','V3','O3','A6','C4','V6','A9','O5','V9']
+];
+
+const KIND = {analogy:'言葉の関係', odd:'仲間はずれ', vocab:'言葉の意味', common:'共通点'};
+const PROMPT = {
+  analogy:['？に入る言葉は？','左の2つと同じ関係になるものを選んでください'],
+  odd:['仲間はずれはどれ？','1つだけ種類が違うものを選んでください'],
+  vocab:['この言葉の意味に一番近いのは？',''],
+  common:['2つの共通点として一番ふさわしいのは？','']
+};
+
+/* =========================================================
+   進め方
+   ========================================================= */
+const TIME = 40;
+const $ = id => document.getElementById(id);
+let QUESTIONS = [], qi, answers, timer, left, locked, startAt, picks;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  window.scrollTo(0,0);
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+// 前回と違うパターンを選ぶ
+function choosePattern(){
+  let last = -1;
+  try { last = parseInt(localStorage.getItem('kotobaiq-last'), 10); } catch(e){}
+  const choices = [0,1,2].filter(i => i !== last);
+  const pick = choices[Math.floor(Math.random()*choices.length)];
+  try { localStorage.setItem('kotobaiq-last', String(pick)); } catch(e){}
+  return pick;
+}
+
+function start(){
+  QUESTIONS = SETS[choosePattern()].map(k => BANK[k]);
+  qi = 0; answers = []; picks = []; startAt = Date.now();
+  show('s-quiz');
+  render();
+}
+
+function stageHtml(q){
+  if (q.type === 'analogy'){
+    return `<div class="eq">
+      <span class="l">${q.q[0]}</span><span class="c">：</span><span class="r">${q.q[1]}</span>
+      <span class="l">${q.q[2]}</span><span class="c">：</span><span class="r q">？</span>
+    </div>${q.ruby ? `<span class="ruby">${q.ruby}</span>` : ''}`;
+  }
+  if (q.type === 'vocab'){
+    return `<div class="big">${q.word}</div>${q.ruby ? `<span class="ruby">${q.ruby}</span>` : ''}`;
+  }
+  if (q.type === 'common'){
+    return `<div class="mid">「${q.pair[0]}」と「${q.pair[1]}」</div>`;
+  }
+  return '';
+}
+
+function render(){
+  const q = QUESTIONS[qi];
+  locked = false;
+  $('qno').innerHTML = `Q${qi+1}<small> / ${QUESTIONS.length}</small><span class="kind">${KIND[q.type]}</span>`;
+  let p = PROMPT[q.type];
+  if (q.type === 'vocab' && q.original) p = ['この言葉の、本来の意味は？','今よく使われる意味ではなく、もともとの意味です'];
+  $('prompt').innerHTML = p[0] + (p[1] ? `<small>${p[1]}</small>` : '');
+  const st = stageHtml(q);
+  $('stage').innerHTML = st;
+  $('stage').style.display = st ? '' : 'none';
+
+  const list = shuffle(q.opts.map((o,i) => ({o, right: i===0})));
+  const box = $('opts');
+  box.className = 'opts ' + ((q.type === 'analogy' || q.type === 'odd') ? 'c2' : 'c1');
+  box.innerHTML = '';
+  list.forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt';
+    b.innerHTML = `<span class="lab">${'ABCDE'[i]}</span><span>${item.o}</span>`;
+    b.addEventListener('click', () => pick(b, item));
+    box.appendChild(b);
+  });
+
+  left = TIME;
+  tick();
+  clearInterval(timer);
+  timer = setInterval(() => { left -= .1; tick(); if (left <= 0) pick(null, null); }, 100);
+}
+
+function tick(){
+  const r = Math.max(0, left / TIME);
+  $('timefill').style.transform = `scaleX(${r})`;
+  const hurry = left <= 10;
+  $('timebar').classList.toggle('hurry', hurry);
+  $('clock').classList.toggle('hurry', hurry);
+  $('clock').textContent = Math.ceil(Math.max(0,left)) + 's';
+}
+
+function pick(btn, item){
+  if (locked) return;
+  locked = true;
+  clearInterval(timer);
+  if (btn) btn.classList.add('picked');
+  const q = QUESTIONS[qi];
+  const right = !!(item && item.right);
+  answers.push({right, d:q.d, type:q.type});
+  picks.push(item ? item.o : null);
+  setTimeout(() => {
+    qi++;
+    if (qi < QUESTIONS.length) render(); else result();
+  }, btn ? 260 : 400);
+}
+
+/* =========================================================
+   結果
+   ========================================================= */
+function erf(x){ const s=Math.sign(x); x=Math.abs(x);
+  const t=1/(1+.3275911*x); const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x);
+  return s*y; }
+function topPercent(iq){ return 100 * (1 - .5*(1+erf((iq-100)/15/Math.SQRT2))); }
+
+// 換算表（正解の割合 → IQ）。全問正解で120＝このテストで測れる上限
+function iqFrom(answers){
+  const max = QUESTIONS.reduce((a,q)=>a+q.d, 0);
+  const got = answers.reduce((a,x)=>a+(x.right?x.d:0), 0);
+  const r = got / max;
+  const P = [[0,70],[.3,85],[.6,100],[.85,110],[1,120]];
+  let iq = 120;
+  for (let i=1;i<P.length;i++){
+    if (r <= P[i][0]){ const [r0,v0]=P[i-1],[r1,v1]=P[i]; iq = v0 + (v1-v0)*(r-r0)/(r1-r0); break; }
+  }
+  return Math.round(Math.min(120, Math.max(70, iq)));
+}
+
+const BANDS = [
+  {min:120, top:true, jp:'測定不能（IQ120以上）',
+   msg:['全問正解です。このテストで測れるいちばん上、IQ120に届きました。IQ120以上は10人に1人ほどの、とても優秀な水準です。',
+        '言葉と言葉の関係をつかむ力、言葉の細かな意味の違いを見分ける力が、どちらもずば抜けています。あなたの本当の力は、このテストでは測りきれません。']},
+  {min:110, jp:'平均より上',
+   msg:['平均よりはっきり上の、よい結果です。4人に1人ほどがこの水準です。',
+        '言葉を正確に使い分ける力がしっかり身についています。文章を読んだり、人に説明したりする場面で強みになる力です。']},
+  {min:90, jp:'平均',
+   msg:['いちばん多くの人がいる、平均的な水準です。2人に1人がこの範囲（IQ90〜109）に入ります。',
+        '言葉の力は、本を読んだり、人と話したりするほど伸びていく力です。「もう一度」を押すと別の問題が出るので、腕だめしにどうぞ。']},
+  {min:85, jp:'平均よりやや下',
+   msg:['平均のすぐ下の水準です。',
+        '言葉のテストは、知っている言葉の数にも左右されます。読書の量や、ふだん使う言葉の違いだけでも、このくらいの差は出ます。言葉の力は大人になってからも伸ばせる力です。']},
+  {min:0, jp:'境界知能の目安',
+   msg:['今回の結果は、「境界知能」と呼ばれる範囲（IQ70〜84）の目安になりました。これは病気の名前ではありません。7人に1人ほどがこの範囲に入るといわれていて、決してめずらしいことではありません。',
+        'ただし、これは10問だけの簡単なテストです。とくに言葉のテストは、日本語が母語でない人や、本を読む機会が少なかった人では、本来の力よりずっと低く出ます。疲れや時間制限でも点数は下がります。この結果だけで、あなたのことは決まりません。',
+        'もし、勉強や仕事、人づきあいで「なぜか自分だけうまくいかない」と感じることが多いなら、病院や専門の相談窓口で正式な検査を受けてみてください。本当の数字が分かるだけでなく、自分に合ったやり方や支えが見つかります。苦手を知ることは、自分を責めないための第一歩です。',
+        'それに、IQはやさしさや努力、人を笑顔にする力までは測れません。']}
+];
+
+function result(){
+  if (window.SND) SND.fx('finish');
+  const iq = iqFrom(answers);
+  const band = BANDS.find(b => iq >= b.min);
+  const correct = answers.filter(a=>a.right).length;
+  const secs = Math.round((Date.now()-startAt)/1000);
+  const timeTxt = `正解 ${correct}/${QUESTIONS.length}・${Math.floor(secs/60)}分${secs%60}秒`;
+  show('s-result');
+
+  // 数字がカウントアップする
+  const el = $('iqnum'); const t0 = performance.now(); const dur = 1100;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function up(now){
+    const k = reduce ? 1 : Math.min(1,(now-t0)/dur);
+    el.textContent = Math.round(iq * (1 - Math.pow(1-k,3)));
+    if (k < 1) requestAnimationFrame(up);
+    else if (iq >= 120) el.textContent = '120+';
+  })(t0);
+
+  $('band').className = 'band' + (band.top ? ' top' : '');
+  $('band').textContent = band.jp;
+
+  if (iq >= 120) $('rank').innerHTML = `100人中、上から<b>10</b>番以内<small>${timeTxt}</small>`;
+  else if (iq >= 90) $('rank').innerHTML = `100人中、上から約<b>${Math.max(1, Math.round(topPercent(iq)))}</b>番目<small>${timeTxt}</small>`;
+  else $('rank').innerHTML = `<small>${timeTxt}</small>`;
+
+  $('msg').innerHTML = band.msg.map(p => `<p>${p}</p>`).join('');
+
+  // 種類ごとの正解率
+  const types = ['analogy','vocab','odd','common'];
+  const rate = {};
+  types.forEach(t => { const a = answers.filter(x=>x.type===t); rate[t] = Math.round(100*a.filter(x=>x.right).length/a.length); });
+  $('meter').innerHTML = types.map(t =>
+    `<div class="meter-row"><span>${KIND[t]}</span><div class="track"><i style="width:${rate[t]}%"></i></div><span class="pc">${rate[t]}%</span></div>`).join('');
+  const best = types.slice().sort((a,b)=>rate[b]-rate[a]);
+  const COMMENT = {
+    analogy:'言葉どうしの「関係」をつかむのが得意です。物事を筋道立てて考えるタイプです。',
+    vocab:'言葉の細かい意味を正確に知っているのが強みです。読書量や語彙の豊かさが表れています。',
+    odd:'言葉を「種類」で分けるのが得意です。物事を整理して考えるタイプです。',
+    common:'違うもの同士の「共通点」を見つけるのが得意です。物事の本質をつかむ力があります。'
+  };
+  const allSame = rate[best[0]] === rate[best[3]];
+  $('strong').textContent = allSame ? '4つの種類を、バランスよく解けています。' : COMMENT[best[0]];
+
+  // 答え合わせ
+  $('review').innerHTML = QUESTIONS.map((q,i) => {
+    const ok = answers[i].right;
+    let title;
+    if (q.type === 'analogy') title = `${q.q[0]}：${q.q[1]} ＝ ${q.q[2]}：？`;
+    else if (q.type === 'vocab') title = `${q.word}${q.ruby ? `（${q.ruby}）` : ''}`;
+    else if (q.type === 'common') title = `「${q.pair[0]}」と「${q.pair[1]}」の共通点`;
+    else title = `仲間はずれ：${q.opts.slice(1).join('・')}・${q.opts[0]}`;
+    const mine = picks[i] === null ? '時間切れ' : picks[i];
+    return `<li><span class="mark ${ok?'ok':'ng'}">${ok?'○':'×'}</span>${title}
+      <span class="ans">正解：${q.opts[0]}${ok ? '' : `／あなたの答え：${mine}`}</span></li>`;
+  }).join('');
+}
+
+$('start').addEventListener('click', start);
+$('again').addEventListener('click', start);
+</script>
+
+<!-- ===== 音（効果音とBGM）：音のファイルは使わず、その場で音を作る ===== -->
+<style>
+  body{padding-bottom:64px}
+  .snd-box{position:fixed;right:12px;bottom:12px;z-index:60;display:flex;gap:8px}
+  .snd-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0}
+  .snd-btn svg{width:22px;height:22px;display:block}
+  .snd-btn.off{opacity:.45}
+  .snd-btn:focus-visible{outline:3px solid #888;outline-offset:2px}
+</style>
+<div class="snd-box">
+  <button type="button" class="snd-btn off" id="snd-bgm" aria-label="BGM オン・オフ" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+  </button>
+  <button type="button" class="snd-btn" id="snd-fx" aria-label="効果音 オン・オフ" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+</div>
+<script>
+const SND = (() => {
+  const STYLE = 'wa';      // BGMの雰囲気（アプリごとに変える）
+  const KEY = 'snd-' + STYLE;
+  let ctx = null, master = null, fxOn = true, bgmOn = false, bgmTimer = null, step = 0, nextT = 0;
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s.fx === false) fxOn = false; } catch(e){}
+
+  function init(){
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return true;
+  }
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);   // 音の高さ（MIDI番号→周波数）
+
+  // 1つの音を鳴らす
+  function tone(note, t, dur, vol, type, attack){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = hz(note);
+    const a = attack || .005;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+  }
+
+  // ---------- 効果音 ----------
+  const FX = {
+    tap:    t => tone(84, t, .07, .07, 'triangle'),
+    ok:     t => { tone(76, t, .18, .09, 'triangle'); tone(83, t + .09, .25, .09, 'triangle'); },
+    ng:     t => { tone(55, t, .22, .08, 'square'); tone(52, t + .1, .25, .06, 'square'); },
+    finish: t => { [72,76,79,84].forEach((n,i) => tone(n, t + i*.11, .5, .08, 'triangle')); },
+    pad:    (t, n) => tone(n, t, .25, .1, 'sine')
+  };
+  function fx(name, arg){
+    if (!fxOn || !init()) return;
+    FX[name](ctx.currentTime + .01, arg);
+  }
+
+  // ---------- BGM（ゆっくりした和音のくり返し） ----------
+  const SONGS = {
+    // [和音の並び（MIDI番号）, 1つの和音の長さ（秒）, 上で鳴る音の候補]
+    blue:  [[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,59]], 4, [72,74,76,79,81,83]],   // 明るく考える感じ
+    wa:    [[[50,57,62,65],[48,55,60,64],[46,53,58,62],[45,52,57,64]], 4.5, [74,76,77,81,84,86]], // 和風（都節っぽい）
+    yo:    [[[50,57,62,66],[47,54,59,62],[45,52,57,61],[43,50,55,59]], 4.5, [74,76,78,81,83,86]], // 明るい和風（ヨナ抜き）
+    calm:  [[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]], 6, [69,72,76]]             // 控えめ（記憶のテスト用）
+  };
+  function schedule(){
+    const song = SONGS[STYLE] || SONGS.blue;
+    const [chords, len, mel] = song;
+    while (nextT < ctx.currentTime + 1.5){
+      const ch = chords[step % chords.length];
+      ch.forEach(n => tone(n, nextT, len * 1.1, .022, 'sine', 1.2));         // やわらかい和音
+      const notes = STYLE === 'calm' ? 2 : 4;
+      for (let i = 0; i < notes; i++){                                         // ぽつぽつ鳴る高い音
+        if (Math.random() < .7) tone(mel[Math.floor(Math.random()*mel.length)], nextT + i*(len/notes) + .2, 1.6, .016, 'triangle', .02);
+      }
+      nextT += len; step++;
+    }
+  }
+  function startBgm(){
+    if (!init()) return;
+    nextT = ctx.currentTime + .1; step = 0;
+    schedule(); bgmTimer = setInterval(schedule, 500);
+  }
+  function stopBgm(){ clearInterval(bgmTimer); bgmTimer = null; }
+
+  // ---------- ボタン ----------
+  const bBgm = document.getElementById('snd-bgm'), bFx = document.getElementById('snd-fx');
+  function paint(){
+    bBgm.classList.toggle('off', !bgmOn); bBgm.setAttribute('aria-pressed', bgmOn);
+    bFx.classList.toggle('off', !fxOn);   bFx.setAttribute('aria-pressed', fxOn);
+  }
+  bBgm.addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; bgmOn ? startBgm() : stopBgm(); paint(); });
+  bFx.addEventListener('click', e => {
+    e.stopPropagation(); fxOn = !fxOn; paint();
+    try { localStorage.setItem(KEY, JSON.stringify({fx: fxOn})); } catch(err){}
+    if (fxOn) fx('tap');
+  });
+  paint();
+
+  // ボタンやリンクを押したら、タップ音
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button, a.btn');
+    if (!b || b.classList.contains('snd-btn') || b.dataset.noTap !== undefined) return;
+    fx('tap');
+  });
+
+  return { fx };
+})();
+</script>
+
+</body>
+</html>

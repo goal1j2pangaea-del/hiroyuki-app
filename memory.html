@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEMORY & SPEED｜記憶とスピードのテスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#E8EDF3; --paper:#FFFFFF; --ink:#16203A; --sub:#5C677E; --line:#D2D9E5;
+    --teal:#0F7A73;  --teal-soft:#E3F3F1; --rose:#C24A5A; --gold:#9A6A00;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans",sans-serif;font-size:16px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;min-height:100svh;user-select:none;-webkit-user-select:none}
+  .app{max-width:480px;margin:0 auto;padding:18px 16px 40px}
+  .en{display:block;font-size:.82em;color:var(--sub);font-weight:500;line-height:1.5}
+  button{font:inherit;color:inherit}
+  .screen{display:none}.screen.on{display:block}
+
+  .intro-top{padding:30px 4px 22px}
+  .logo{font-family:"Archivo",sans-serif;font-weight:900;font-size:58px;line-height:.95;letter-spacing:-.02em}
+  .logo b{color:var(--teal)}
+  .logo-sub{font-size:20px;font-weight:900;margin-top:12px}
+  .steps{list-style:none;display:grid;gap:8px;margin:6px 0 20px}
+  .steps li{background:var(--paper);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center}
+  .steps .n{font-family:"Archivo",sans-serif;font-weight:900;font-size:20px;color:var(--teal);text-align:center}
+  .steps b{display:block;font-size:15px}
+  .steps span.en{font-size:12px}
+  .btn{display:block;width:100%;border:none;border-radius:14px;cursor:pointer;background:var(--teal);color:#fff;font-weight:900;font-size:18px;padding:15px;line-height:1.3}
+  .btn .en{color:rgba(255,255,255,.8);font-size:13px}
+  .btn.ghost{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ghost .en{color:var(--sub)}
+  .btn:focus-visible,.key:focus-visible,.tile:focus-visible,.sym:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  /* 各パートの説明 */
+  .part-no{font-family:"Archivo",sans-serif;font-weight:900;font-size:15px;color:var(--teal);margin:30px 2px 4px}
+  .part-title{font-size:26px;font-weight:900;line-height:1.35}
+  .part-title .en{font-size:15px;font-weight:700}
+  .part-card{background:var(--paper);border-radius:16px;padding:18px;margin:16px 0 20px;font-size:15px}
+  .part-card .en{font-size:13px;margin-top:6px}
+
+  /* 問題の画面 */
+  .bar-top{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 12px}
+  .tag{font-weight:900;font-size:15px}
+  .tag .en{display:inline;margin-left:6px;font-size:12px}
+  .count{font-family:"Archivo",sans-serif;font-weight:800;color:var(--sub)}
+  .card{background:var(--paper);border-radius:16px;padding:18px 16px}
+  .status{text-align:center;font-weight:900;font-size:15px;min-height:52px;line-height:1.5}
+  .status .en{font-size:12px}
+  .flash{font-family:"Archivo",sans-serif;font-weight:900;font-size:110px;line-height:1;text-align:center;height:150px;display:flex;align-items:center;justify-content:center}
+  .typed{font-family:"Archivo",sans-serif;font-weight:900;font-size:40px;letter-spacing:.14em;text-align:center;min-height:62px;border-bottom:2px solid var(--line);margin:0 10px 14px}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .key{background:var(--bg);border:none;border-radius:12px;font-family:"Archivo",sans-serif;font-weight:800;font-size:26px;padding:12px 0;cursor:pointer}
+  .key.wide{font-family:"Noto Sans JP",sans-serif;font-size:15px;font-weight:900}
+  .key.go{background:var(--teal);color:#fff}
+  .key:active{transform:scale(.95)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
+  .tile{aspect-ratio:1;border:none;border-radius:14px;background:var(--bg);cursor:pointer;transition:background .1s}
+  .tile.lit{background:var(--teal)}
+  .tile.tap{background:#7FC5BE}
+  .tile[disabled]{cursor:default}
+  .result-mark{text-align:center;font-weight:900;font-size:22px;height:34px}
+  .result-mark.ok{color:var(--teal)} .result-mark.ng{color:var(--rose)}
+
+  /* スピード */
+  .timer{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .timer i{display:block;height:100%;background:var(--teal);transform-origin:left}
+  .target{text-align:center;font-size:84px;line-height:1.2;margin:4px 0 14px}
+  .target small{display:block;font-size:13px;color:var(--sub);font-weight:700;line-height:1.4}
+  .syms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .sym{background:var(--bg);border:2px solid transparent;border-radius:14px;font-size:46px;padding:10px 0;cursor:pointer;line-height:1.3}
+  .sym.ng{border-color:var(--rose);background:#FBE9EC}
+  .score-now{text-align:center;font-family:"Archivo",sans-serif;font-weight:900;font-size:18px;margin-top:14px}
+
+  /* 結果 */
+  .res-head{padding:24px 4px 6px}
+  .iq{font-family:"Archivo",sans-serif;font-weight:900;font-size:100px;line-height:1;letter-spacing:-.03em;margin-top:4px}
+  .iq small{font-size:24px;margin-right:6px;color:var(--sub);font-weight:800;letter-spacing:0}
+  .band{font-size:22px;font-weight:900;margin-top:8px;line-height:1.4}
+  .band.top{color:var(--gold)}
+  .band .en{font-size:14px}
+  .res-card{background:var(--paper);border-radius:16px;padding:18px;margin-top:14px}
+  .res-card h3{font-size:15px;font-weight:900;margin-bottom:6px}
+  .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:none}
+  .row b{font-size:14.5px}
+  .row .en{font-size:11.5px}
+  .row .v{font-family:"Archivo",sans-serif;font-weight:900;font-size:24px;text-align:right}
+  .row .v small{font-size:12px;color:var(--sub);font-weight:500;display:block;line-height:1.3}
+  .msg{font-size:15px;line-height:1.95}
+  .msg .en{margin-top:10px;font-size:13.5px}
+  .actions{display:grid;gap:10px;margin-top:18px}
+  a.btn{text-decoration:none;text-align:center}
+  .disclaimer{font-size:12px;color:var(--sub);margin-top:16px;line-height:1.7;text-align:center}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- はじめ -->
+  <section class="screen on" id="s-intro">
+    <div class="intro-top">
+      <div class="logo">MEMORY<br><b>&amp; SPEED</b></div>
+      <div class="logo-sub">記憶とスピードのテスト<span class="en">Memory and speed test</span></div>
+    </div>
+    <ul class="steps">
+      <li><span class="n">1</span><div><b>数字を覚える</b><span class="en">Remember the numbers</span></div></li>
+      <li><span class="n">2</span><div><b>数字を逆から答える</b><span class="en">Say the numbers backward</span></div></li>
+      <li><span class="n">3</span><div><b>光った場所を覚える</b><span class="en">Remember where it lights up</span></div></li>
+      <li><span class="n">4</span><div><b>同じ記号をすばやく探す</b><span class="en">Find the same symbol, fast</span></div></li>
+    </ul>
+    <button class="btn" id="go">スタート<span class="en">Start</span></button>
+    <p class="disclaimer">全部で5分ほどです。音は出ません。<br>About 5 minutes. No sound.</p>
+  </section>
+
+  <!-- パートの説明 -->
+  <section class="screen" id="s-part">
+    <div class="part-no" id="p-no"></div>
+    <div class="part-title" id="p-title"></div>
+    <div class="part-card" id="p-desc"></div>
+    <button class="btn" id="p-go">はじめる<span class="en">Begin</span></button>
+  </section>
+
+  <!-- 数字（順・逆） -->
+  <section class="screen" id="s-digits">
+    <div class="bar-top"><div class="tag" id="d-tag"></div><div class="count" id="d-count"></div></div>
+    <div class="card">
+      <div class="status" id="d-status"></div>
+      <div class="flash" id="d-flash"></div>
+      <div id="d-input" style="display:none">
+        <div class="typed" id="d-typed"></div>
+        <div class="pad" id="d-pad"></div>
+      </div>
+      <div class="result-mark" id="d-mark"></div>
+    </div>
+  </section>
+
+  <!-- 光る場所 -->
+  <section class="screen" id="s-grid">
+    <div class="bar-top"><div class="tag">光った場所<span class="en">Light order</span></div><div class="count" id="g-count"></div></div>
+    <div class="card">
+      <div class="status" id="g-status"></div>
+      <div class="grid" id="g-grid"></div>
+      <div class="result-mark" id="g-mark" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- スピード -->
+  <section class="screen" id="s-speed">
+    <div class="bar-top"><div class="tag">同じ記号を探す<span class="en">Find the same</span></div><div class="count" id="s-left"></div></div>
+    <div class="timer"><i id="s-bar"></i></div>
+    <div class="card">
+      <div class="target" id="s-target"></div>
+      <div class="syms" id="s-syms"></div>
+      <div class="score-now" id="s-score"></div>
+    </div>
+  </section>
+
+  <!-- 結果 -->
+  <section class="screen" id="s-result">
+    <div class="res-head">
+      <div style="font-weight:700">記憶とスピードのIQの目安<span class="en">Your estimated IQ</span></div>
+      <div class="iq"><small>IQ</small><span id="r-iq">0</span></div>
+      <div class="band" id="r-band"></div>
+    </div>
+    <div class="res-card">
+      <h3>パートごとの結果<span class="en" style="display:inline;margin-left:6px">Results by part</span></h3>
+      <div id="r-rows"></div>
+    </div>
+    <div class="res-card msg" id="r-msg"></div>
+    <div class="actions">
+      <button class="btn" id="r-again">もう一度<span class="en">Try again</span></button>
+      <a class="btn ghost" href="index.html#works">ホームページへ<span class="en">Back to home</span></a>
+    </div>
+    <p class="disclaimer">楽しむための目安で、正式な知能検査ではありません。<br>This is a fun estimate, not an official IQ test.</p>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0,0); }
+const rnd = n => Math.floor(Math.random()*n);
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ---------- 問題の長さ（だんだん長くなる） ---------- */
+const FORWARD  = [4,5,6,7,8];   // 数字を覚える
+const BACKWARD = [3,4,5,6];     // 逆から答える
+const SPATIAL  = [3,4,5,6,7];   // 光った場所
+const SPEED_SEC = 40;           // 記号探しの時間
+
+let R;   // 結果をためておく箱
+
+/* ---------- パートの説明画面 ---------- */
+function partIntro(no, title, en, desc, descEn){
+  return new Promise(res => {
+    $('p-no').textContent = `PART ${no} / 4`;
+    $('p-title').innerHTML = `${title}<span class="en">${en}</span>`;
+    $('p-desc').innerHTML = `${desc}<span class="en">${descEn}</span>`;
+    show('s-part');
+    $('p-go').onclick = () => res();
+  });
+}
+
+/* ---------- 数字の記憶 ---------- */
+function makeDigits(n){
+  const d=[]; while(d.length<n){ const x=rnd(10); if(d[d.length-1]!==x) d.push(x); } return d;
+}
+function askDigits(len){
+  return new Promise(res => {
+    let typed = [];
+    const pad = $('d-pad'); pad.innerHTML = '';
+    const draw = () => $('d-typed').textContent = typed.join('') || ' ';
+    const keys = [1,2,3,4,5,6,7,8,9,'消す',0,'決定'];
+    keys.forEach(k => {
+      const b = document.createElement('button'); b.type='button'; b.className='key' + (typeof k==='string' ? ' wide' : '') + (k==='決定' ? ' go' : '');
+      b.textContent = k === '消す' ? '消す ⌫' : k === '決定' ? '決定 OK' : k;
+      b.onclick = () => {
+        if (k === '消す') typed.pop();
+        else if (k === '決定'){ if (typed.length) res(typed); return; }
+        else if (typed.length < len + 2) typed.push(k);
+        draw();
+        if (typeof k === 'number' && typed.length === len) setTimeout(() => res(typed), 180);  // 桁がそろったら自動で決定
+      };
+      pad.appendChild(b);
+    });
+    draw();
+  });
+}
+async function digitTrial(len, backward, idx, total){
+  show('s-digits');
+  $('d-tag').innerHTML = backward ? '逆から答える<span class="en">Backward</span>' : '数字を覚える<span class="en">Remember</span>';
+  $('d-count').textContent = `${idx+1} / ${total}`;
+  $('d-input').style.display = 'none'; $('d-mark').textContent = ''; $('d-mark').className = 'result-mark';
+  $('d-status').innerHTML = `${len}つの数字が出ます<span class="en">${len} numbers will appear</span>`;
+  $('d-flash').textContent = '';
+  await wait(1300);
+  const seq = makeDigits(len);
+  $('d-status').innerHTML = 'よく見て<span class="en">Watch</span>';
+  for (const x of seq){ $('d-flash').textContent = x; await wait(800); $('d-flash').textContent = ''; await wait(250); }
+  $('d-flash').style.display = 'none';
+  $('d-status').innerHTML = backward ? '<b>逆の順番</b>で入力<span class="en">Type them in REVERSE order</span>' : '同じ順番で入力<span class="en">Type them in the same order</span>';
+  $('d-input').style.display = '';
+  const ans = await askDigits(len);
+  const want = backward ? seq.slice().reverse() : seq;
+  const ok = ans.length === want.length && ans.every((v,i) => v === want[i]);
+  $('d-input').style.display = 'none'; $('d-flash').style.display = '';
+  $('d-flash').style.fontSize = '44px'; $('d-flash').textContent = want.join(' ');
+  $('d-status').innerHTML = '正解は<span class="en">Answer</span>';
+  $('d-mark').textContent = ok ? '○ 正解 Correct' : '× ざんねん Missed';
+  $('d-mark').className = 'result-mark ' + (ok ? 'ok' : 'ng');
+  SND.fx(ok ? 'ok' : 'ng');
+  await wait(1500);
+  $('d-flash').style.fontSize = '';
+  return ok;
+}
+
+/* ---------- 光った場所 ---------- */
+function buildGrid(){
+  const g = $('g-grid'); g.innerHTML = '';
+  for (let i=0;i<9;i++){ const b=document.createElement('button'); b.type='button'; b.className='tile'; b.disabled=true; b.dataset.noTap=''; b.setAttribute('aria-label','マス '+(i+1)); g.appendChild(b); }
+  return [...g.children];
+}
+async function gridTrial(len, idx, total){
+  show('s-grid');
+  $('g-count').textContent = `${idx+1} / ${total}`;
+  $('g-mark').textContent = ''; $('g-mark').className = 'result-mark';
+  const tiles = buildGrid();
+  $('g-status').innerHTML = `${len}回 光ります<span class="en">It will light up ${len} times</span>`;
+  await wait(1300);
+  const seq = []; while(seq.length<len){ const x=rnd(9); if (seq[seq.length-1]!==x) seq.push(x); }
+  $('g-status').innerHTML = 'よく見て<span class="en">Watch</span>';
+  for (const x of seq){ tiles[x].classList.add('lit'); await wait(650); tiles[x].classList.remove('lit'); await wait(250); }
+  $('g-status').innerHTML = '同じ順番でタップ<span class="en">Tap in the same order</span>';
+  const ok = await new Promise(res => {
+    let k = 0;
+    tiles.forEach((t,i) => { t.disabled = false; t.onclick = () => {
+      t.classList.add('tap'); setTimeout(() => t.classList.remove('tap'), 180);
+      SND.fx('pad', [60,62,64,65,67,69,71,72,74][i]);
+      if (i !== seq[k]){ res(false); return; }
+      k++; if (k === seq.length) res(true);
+    };});
+  });
+  tiles.forEach(t => t.disabled = true);
+  $('g-mark').textContent = ok ? '○ 正解 Correct' : '× ざんねん Missed';
+  $('g-mark').className = 'result-mark ' + (ok ? 'ok' : 'ng');
+  SND.fx(ok ? 'ok' : 'ng');
+  await wait(1200);
+  return ok;
+}
+
+/* ---------- 記号探し ---------- */
+// 似ている記号どうしのグループ（まちがえやすくするため）
+const SYM_GROUPS = [['★','☆','✦','✧'],['●','○','◉','◎'],['■','□','▣','▢'],['▲','△','▼','▽'],['♠','♣','♤','♧'],['♥','♦','♡','♢'],['◆','◇','◈','❖']];
+function speedRound(){
+  return new Promise(res => {
+    show('s-speed');
+    let correct = 0, wrong = 0;
+    const t0 = performance.now();
+    const next = () => {
+      const g = SYM_GROUPS[rnd(SYM_GROUPS.length)];
+      const target = g[rnd(g.length)];
+      const others = SYM_GROUPS.flat().filter(s => s !== target);
+      const similar = shuffle(g.filter(s => s !== target));
+      const pool = shuffle([...similar, ...shuffle(others.filter(s => !g.includes(s))).slice(0, 5 - similar.length)]).slice(0,5);
+      const opts = shuffle([target, ...pool]);
+      $('s-target').innerHTML = `${target}<small>これと同じものは？ / Find this</small>`;
+      const box = $('s-syms'); box.innerHTML = '';
+      opts.forEach(s => {
+        const b = document.createElement('button'); b.type='button'; b.className='sym'; b.textContent = s;
+        b.onclick = () => {
+          if (s === target){ correct++; next(); }
+          else { wrong++; b.classList.add('ng'); SND.fx('ng'); }
+          $('s-score').textContent = `○ ${correct}　× ${wrong}`;
+        };
+        box.appendChild(b);
+      });
+    };
+    $('s-score').textContent = '○ 0　× 0';
+    next();
+    const tm = setInterval(() => {
+      const el = (performance.now() - t0) / 1000;
+      const left = Math.max(0, SPEED_SEC - el);
+      $('s-bar').style.transform = `scaleX(${left / SPEED_SEC})`;
+      $('s-left').textContent = Math.ceil(left) + 's';
+      if (left <= 0){ clearInterval(tm); $('s-syms').innerHTML = ''; res({correct, wrong}); }
+    }, 100);
+  });
+}
+
+/* ---------- 全体の流れ ---------- */
+async function run(){
+  R = {fwd:[], bwd:[], spa:[], speed:null};
+
+  await partIntro(1, '数字を覚える', 'Remember the numbers',
+    '数字が1つずつ出ます。消えたら、<b>同じ順番</b>で入力してください。4つから始まって、だんだん長くなります。',
+    'Numbers appear one by one. Type them in the same order. It starts with 4 and gets longer.');
+  for (let i=0;i<FORWARD.length;i++) R.fwd.push(await digitTrial(FORWARD[i], false, i, FORWARD.length));
+
+  await partIntro(2, '数字を逆から答える', 'Say the numbers backward',
+    '今度は、出た数字を<b>逆の順番</b>で入力します。たとえば「3・8・5」なら「5・8・3」です。',
+    'This time, type the numbers in reverse order. For example, 3-8-5 → 5-8-3.');
+  for (let i=0;i<BACKWARD.length;i++) R.bwd.push(await digitTrial(BACKWARD[i], true, i, BACKWARD.length));
+
+  await partIntro(3, '光った場所を覚える', 'Remember where it lights up',
+    '9つのマスが、1つずつ光ります。光った順番どおりにタップしてください。',
+    'The squares light up one by one. Tap them in the same order.');
+  for (let i=0;i<SPATIAL.length;i++) R.spa.push(await gridTrial(SPATIAL[i], i, SPATIAL.length));
+
+  await partIntro(4, '同じ記号をすばやく探す', 'Find the same symbol, fast',
+    `上に出た記号と同じものを、下の6つから選んでください。${SPEED_SEC}秒で、できるだけたくさん。よく似た記号があるので注意。`,
+    `Find the same symbol among the six. As many as you can in ${SPEED_SEC} seconds. Watch out for look-alikes.`);
+  R.speed = await speedRound();
+
+  result();
+}
+
+/* ---------- 結果 ---------- */
+function span(list, lens){ let best = 0; list.forEach((ok,i) => { if (ok) best = Math.max(best, lens[i]); }); return best; }
+
+function result(){
+  if (window.SND) SND.fx('finish');
+  const fRate = R.fwd.filter(Boolean).length / FORWARD.length;
+  const bRate = R.bwd.filter(Boolean).length / BACKWARD.length;
+  const sRate = R.spa.filter(Boolean).length / SPATIAL.length;
+  const speedNet = Math.max(0, R.speed.correct - R.speed.wrong);
+  const vRate = Math.min(1, speedNet / 36);            // 40秒で36問（ミスを引いた数）を満点とする
+  const r = fRate*.25 + bRate*.25 + sRate*.25 + vRate*.25;
+
+  const P = [[0,70],[.3,85],[.6,100],[.85,110],[1,120]];
+  let iq = 120;
+  for (let i=1;i<P.length;i++){ if (r <= P[i][0]){ const [r0,v0]=P[i-1],[r1,v1]=P[i]; iq = v0 + (v1-v0)*(r-r0)/(r1-r0); break; } }
+  iq = Math.round(Math.min(120, Math.max(70, iq)));
+
+  show('s-result');
+  $('r-iq').textContent = iq >= 120 ? '120+' : iq;
+  let band;
+  if (iq >= 120) band = ['測定不能（IQ120以上）','Off the scale (120+)', true];
+  else if (iq >= 110) band = ['平均より上','Above average'];
+  else if (iq >= 90) band = ['平均','Average'];
+  else if (iq >= 85) band = ['平均よりやや下','Low average'];
+  else band = ['低めの結果','Lower result'];
+  $('r-band').className = 'band' + (band[2] ? ' top' : '');
+  $('r-band').innerHTML = `${band[0]}<span class="en">${band[1]}</span>`;
+
+  const row = (jp, en, val, note) => `<div class="row"><div><b>${jp}</b><span class="en">${en}</span></div><div class="v">${val}<small>${note}</small></div></div>`;
+  $('r-rows').innerHTML =
+    row('数字を覚える','Numbers', `${span(R.fwd,FORWARD) || '-'}桁`, '覚えられた最長 / longest') +
+    row('逆から答える','Backward', `${span(R.bwd,BACKWARD) || '-'}桁`, '覚えられた最長 / longest') +
+    row('光った場所','Light order', `${span(R.spa,SPATIAL) || '-'}回`, '覚えられた最長 / longest') +
+    row('記号探し','Symbol search', `${R.speed.correct}問`, `${SPEED_SEC}秒・ミス${R.speed.wrong}`);
+
+  const fs = span(R.fwd,FORWARD), bs = span(R.bwd,BACKWARD);
+  $('r-msg').innerHTML =
+    `大人がふつうに覚えられる数字は、<b>7つ前後</b>と言われています（「マジカルナンバー7」と呼ばれます）。逆から答えるのは難しく、<b>5つ</b>できれば十分です。今回のあなたは、順番どおりで${fs || 0}桁、逆からで${bs || 0}桁でした。` +
+    `<span class="en">Most adults can remember about 7 numbers ("the magical number seven"). Backward is harder — 5 is a good result. You remembered ${fs || 0} forward and ${bs || 0} backward.</span>`;
+}
+
+$('go').onclick = run;
+$('r-again').onclick = run;
+</script>
+
+<!-- ===== 音（効果音とBGM）：音のファイルは使わず、その場で音を作る ===== -->
+<style>
+  body{padding-bottom:64px}
+  .snd-box{position:fixed;right:12px;bottom:12px;z-index:60;display:flex;gap:8px}
+  .snd-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0}
+  .snd-btn svg{width:22px;height:22px;display:block}
+  .snd-btn.off{opacity:.45}
+  .snd-btn:focus-visible{outline:3px solid #888;outline-offset:2px}
+</style>
+<div class="snd-box">
+  <button type="button" class="snd-btn off" id="snd-bgm" aria-label="BGM オン・オフ" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+  </button>
+  <button type="button" class="snd-btn" id="snd-fx" aria-label="効果音 オン・オフ" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+</div>
+<script>
+const SND = (() => {
+  const STYLE = 'calm';      // BGMの雰囲気（アプリごとに変える）
+  const KEY = 'snd-' + STYLE;
+  let ctx = null, master = null, fxOn = true, bgmOn = false, bgmTimer = null, step = 0, nextT = 0;
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s.fx === false) fxOn = false; } catch(e){}
+
+  function init(){
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return true;
+  }
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);   // 音の高さ（MIDI番号→周波数）
+
+  // 1つの音を鳴らす
+  function tone(note, t, dur, vol, type, attack){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = hz(note);
+    const a = attack || .005;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+  }
+
+  // ---------- 効果音 ----------
+  const FX = {
+    tap:    t => tone(84, t, .07, .07, 'triangle'),
+    ok:     t => { tone(76, t, .18, .09, 'triangle'); tone(83, t + .09, .25, .09, 'triangle'); },
+    ng:     t => { tone(55, t, .22, .08, 'square'); tone(52, t + .1, .25, .06, 'square'); },
+    finish: t => { [72,76,79,84].forEach((n,i) => tone(n, t + i*.11, .5, .08, 'triangle')); },
+    pad:    (t, n) => tone(n, t, .25, .1, 'sine')
+  };
+  function fx(name, arg){
+    if (!fxOn || !init()) return;
+    FX[name](ctx.currentTime + .01, arg);
+  }
+
+  // ---------- BGM（ゆっくりした和音のくり返し） ----------
+  const SONGS = {
+    // [和音の並び（MIDI番号）, 1つの和音の長さ（秒）, 上で鳴る音の候補]
+    blue:  [[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,59]], 4, [72,74,76,79,81,83]],   // 明るく考える感じ
+    wa:    [[[50,57,62,65],[48,55,60,64],[46,53,58,62],[45,52,57,64]], 4.5, [74,76,77,81,84,86]], // 和風（都節っぽい）
+    yo:    [[[50,57,62,66],[47,54,59,62],[45,52,57,61],[43,50,55,59]], 4.5, [74,76,78,81,83,86]], // 明るい和風（ヨナ抜き）
+    calm:  [[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]], 6, [69,72,76]]             // 控えめ（記憶のテスト用）
+  };
+  function schedule(){
+    const song = SONGS[STYLE] || SONGS.blue;
+    const [chords, len, mel] = song;
+    while (nextT < ctx.currentTime + 1.5){
+      const ch = chords[step % chords.length];
+      ch.forEach(n => tone(n, nextT, len * 1.1, .022, 'sine', 1.2));         // やわらかい和音
+      const notes = STYLE === 'calm' ? 2 : 4;
+      for (let i = 0; i < notes; i++){                                         // ぽつぽつ鳴る高い音
+        if (Math.random() < .7) tone(mel[Math.floor(Math.random()*mel.length)], nextT + i*(len/notes) + .2, 1.6, .016, 'triangle', .02);
+      }
+      nextT += len; step++;
+    }
+  }
+  function startBgm(){
+    if (!init()) return;
+    nextT = ctx.currentTime + .1; step = 0;
+    schedule(); bgmTimer = setInterval(schedule, 500);
+  }
+  function stopBgm(){ clearInterval(bgmTimer); bgmTimer = null; }
+
+  // ---------- ボタン ----------
+  const bBgm = document.getElementById('snd-bgm'), bFx = document.getElementById('snd-fx');
+  function paint(){
+    bBgm.classList.toggle('off', !bgmOn); bBgm.setAttribute('aria-pressed', bgmOn);
+    bFx.classList.toggle('off', !fxOn);   bFx.setAttribute('aria-pressed', fxOn);
+  }
+  bBgm.addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; bgmOn ? startBgm() : stopBgm(); paint(); });
+  bFx.addEventListener('click', e => {
+    e.stopPropagation(); fxOn = !fxOn; paint();
+    try { localStorage.setItem(KEY, JSON.stringify({fx: fxOn})); } catch(err){}
+    if (fxOn) fx('tap');
+  });
+  paint();
+
+  // ボタンやリンクを押したら、タップ音
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button, a.btn');
+    if (!b || b.classList.contains('snd-btn') || b.dataset.noTap !== undefined) return;
+    fx('tap');
+  });
+
+  return { fx };
+})();
+</script>
+
+</body>
+</html>

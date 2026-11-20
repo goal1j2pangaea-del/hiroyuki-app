@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N1 MIND｜Japanese Brain Check</title>
+<meta name="description" content="日本語学習者のための、言葉で考える力のテスト。JLPTのレベルと、日本語で測ったIQの目安が分かります。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Shippori+Mincho:wght@600;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#EAEEF5;       /* 背景 */
+    --paper:#FFFFFF;    /* 問題用紙 */
+    --ink:#18223A;      /* 文字 */
+    --sub:#5B6479;      /* 補足 */
+    --line:#D3D9E4;     /* 罫線 */
+    --ai:#2D4F9E;       /* 藍色（ボタン） */
+    --ai-soft:#EBF0FA;  /* うすい藍 */
+    --shu:#B8342A;      /* 朱色（？マーク・時間ぎれ） */
+    --gold:#9A6A00;     /* ほめる色 */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif;
+    font-size:16px;line-height:1.8;
+    -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+    min-height:100svh;
+  }
+  .app{max-width:480px;margin:0 auto;padding:18px 16px 40px}
+  .en{display:block;font-size:.8em;color:var(--sub);font-weight:500;line-height:1.5}
+  rt{font-size:.5em;font-weight:500;color:var(--sub)}
+  button{font:inherit;color:inherit}
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ===== はじめの画面 ===== */
+  .intro-top{padding:30px 4px 22px}
+  .logo{font-family:"Archivo",sans-serif;font-weight:900;font-size:76px;line-height:.92;letter-spacing:-.02em}
+  .logo b{color:var(--ai)}
+  .logo-sub{font-size:20px;font-weight:900;margin-top:14px;line-height:1.5}
+  .logo-sub .en{font-size:14px}
+  .sample{background:var(--paper);border-radius:14px;padding:20px 18px;margin:4px 0 16px;text-align:center}
+  .sample .m{font-family:"Shippori Mincho",serif;font-size:28px;font-weight:800;line-height:2}
+  .sample .hint{font-size:12.5px;color:var(--sub)}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .fact{background:var(--paper);border-radius:12px;padding:12px 6px;text-align:center}
+  .fact b{display:block;font-family:"Archivo",sans-serif;font-size:24px;font-weight:900;line-height:1.1}
+  .fact span{font-size:12px;font-weight:700;display:block;margin-top:4px;line-height:1.4}
+  .fact .en{font-size:10.5px}
+  .howto{font-size:14.5px;margin-bottom:22px;padding:0 4px}
+  .btn{
+    display:block;width:100%;border:none;border-radius:14px;cursor:pointer;
+    background:var(--ai);color:#fff;font-weight:900;font-size:18px;padding:15px;line-height:1.3;
+  }
+  .btn .en{color:rgba(255,255,255,.8);font-size:13px}
+  .btn:focus-visible,.opt:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
+  .btn.ghost{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ghost .en{color:var(--sub)}
+  a.btn{text-decoration:none;text-align:center}
+
+  /* ===== 問題の画面 ===== */
+  .bar-top{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 8px}
+  .qno{font-family:"Archivo",sans-serif;font-weight:900;font-size:22px}
+  .qno small{font-size:14px;color:var(--sub);font-weight:800}
+  .lv{display:inline-block;font-family:"Archivo",sans-serif;font-size:12px;font-weight:900;color:#fff;background:var(--ai);border-radius:6px;padding:1px 7px;margin-left:8px;vertical-align:3px}
+  .clock{font-family:"Archivo",sans-serif;font-weight:800;font-size:16px;color:var(--sub)}
+  .clock.hurry{color:var(--shu)}
+  .timebar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .timebar i{display:block;height:100%;background:var(--ai);width:100%;transform-origin:left}
+  .timebar.hurry i{background:var(--shu)}
+  .card{background:var(--paper);border-radius:16px;padding:20px 16px 16px}
+  .prompt{font-size:16.5px;font-weight:900;line-height:1.9}
+  .prompt .en{font-size:13px;line-height:1.5}
+  .stage{font-family:"Shippori Mincho",serif;font-weight:800;text-align:center;padding:18px 0 6px;line-height:2}
+  .stage .big{font-size:36px}
+  .stage .mid{font-size:26px}
+  .stage .eq{display:grid;grid-template-columns:1fr auto 1fr;gap:0 10px;align-items:center;font-size:27px;max-width:320px;margin:0 auto}
+  .stage .eq .c{color:var(--sub);font-size:22px}
+  .stage .eq .l{text-align:right}
+  .stage .eq .r{text-align:left}
+  .stage .q{color:var(--shu)}
+  .opts{display:grid;gap:10px;margin-top:16px}
+  .opts.c2{grid-template-columns:repeat(2,1fr)}
+  .opts.c1{grid-template-columns:1fr}
+  .opt{
+    background:var(--paper);border:2px solid var(--line);border-radius:12px;cursor:pointer;
+    padding:12px 14px;text-align:left;font-size:16px;font-weight:700;line-height:2;
+    display:flex;gap:12px;align-items:center;transition:border-color .12s, transform .12s;
+  }
+  .opts.c2 .opt{justify-content:center;text-align:center;font-family:"Shippori Mincho",serif;font-size:21px;font-weight:800;padding:12px 6px}
+  .opt .lab{font-family:"Archivo",sans-serif;font-size:12px;font-weight:800;color:var(--sub);flex:none;width:14px}
+  .opts.c2 .opt .lab{display:none}
+  .opt.picked{border-color:var(--ai);background:var(--ai-soft);transform:scale(.97)}
+  @media(hover:hover){.opt:hover{border-color:var(--ai)}}
+
+  /* ===== 結果の画面 ===== */
+  .res-head{padding:24px 4px 4px}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .score{background:var(--paper);border-radius:16px;padding:16px 14px 14px}
+  .score .lbl{font-size:13px;font-weight:900;line-height:1.4}
+  .score .lbl .en{font-size:11px}
+  .score .val{font-family:"Archivo",sans-serif;font-weight:900;font-size:58px;line-height:1;margin-top:10px;letter-spacing:-.02em}
+  .score .val small{font-size:18px;color:var(--sub);margin-right:3px;letter-spacing:0}
+  .score.jlpt .val{color:var(--ai)}
+  .headline{font-size:22px;font-weight:900;line-height:1.5;margin:18px 2px 0}
+  .headline.top{color:var(--gold)}
+  .headline .en{font-size:14px;font-weight:700}
+  .sub-line{font-size:12.5px;color:var(--sub);margin:6px 2px 0}
+  .res-card{background:var(--paper);border-radius:16px;padding:20px 18px;margin-top:16px}
+  .res-card h3{font-size:15px;font-weight:900;margin-bottom:10px;line-height:1.5}
+  .res-card h3 .en{font-size:12px}
+  .msg p{font-size:15px;line-height:2}
+  .msg .en-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:14px;color:var(--sub);line-height:1.7}
+  .note{font-size:13.5px;line-height:1.9;background:var(--ai-soft);border-radius:12px;padding:12px 14px;margin-top:14px}
+  .note .en{font-size:12.5px;margin-top:4px}
+  .meter-row{display:grid;grid-template-columns:88px 1fr 44px;gap:10px;align-items:center;font-size:14px;font-weight:700;margin-top:10px}
+  .meter-row .en{font-size:10.5px}
+  .track{height:12px;background:var(--bg);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--ai);border-radius:99px}
+  .meter-row .pc{font-family:"Archivo",sans-serif;font-weight:800;text-align:right}
+  .review{list-style:none}
+  .review li{padding:12px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:2}
+  .review li:first-child{border-top:none}
+  .review .mark{font-weight:900;margin-right:6px}
+  .review .ok{color:#2E7D4F}
+  .review .ng{color:var(--shu)}
+  .review .ans{display:block;color:var(--sub);font-size:13px;line-height:1.9}
+  .review .gloss{display:block;color:var(--ai);font-size:12.5px;line-height:1.5}
+  .actions{display:grid;gap:10px;margin-top:20px}
+  .disclaimer{font-size:12px;color:var(--sub);margin-top:18px;line-height:1.7;text-align:center}
+  @media(prefers-reduced-motion:reduce){.opt{transition:none}}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- ===== はじめの画面 ===== -->
+  <section class="screen on" id="s-intro">
+    <div class="intro-top">
+      <div class="logo">N1<br><b>MIND</b></div>
+      <div class="logo-sub" id="intro-sub"></div>
+    </div>
+    <div class="sample" aria-hidden="true">
+      <div class="m" id="sample"></div>
+      <div class="hint">たとえば、こんな問題です / Example</div>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>10</b><span id="f1"></span></div>
+      <div class="fact"><b>45<small style="font-size:13px">s</small></b><span id="f2"></span></div>
+      <div class="fact"><b>N3→N1</b><span id="f3"></span></div>
+    </div>
+    <p class="howto" id="howto"></p>
+    <button class="btn" id="start">スタート<span class="en">Start</span></button>
+  </section>
+
+  <!-- ===== 問題の画面 ===== -->
+  <section class="screen" id="s-quiz">
+    <div class="bar-top">
+      <div class="qno" id="qno"></div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="timebar" id="timebar"><i id="timefill"></i></div>
+    <div class="card">
+      <p class="prompt" id="prompt"></p>
+      <div class="stage" id="stage"></div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- ===== 結果の画面 ===== -->
+  <section class="screen" id="s-result">
+    <div class="res-head">
+      <div class="duo">
+        <div class="score jlpt">
+          <div class="lbl" id="lbl-lv"></div>
+          <div class="val" id="lvnum"></div>
+        </div>
+        <div class="score">
+          <div class="lbl" id="lbl-iq"></div>
+          <div class="val"><small>IQ</small><span id="iqnum">0</span></div>
+        </div>
+      </div>
+      <div class="headline" id="headline"></div>
+      <div class="sub-line" id="subline"></div>
+    </div>
+
+    <div class="res-card msg" id="msg"></div>
+
+    <div class="res-card">
+      <h3 id="h-meter"></h3>
+      <div id="meter"></div>
+    </div>
+
+    <div class="res-card">
+      <h3 id="h-review"></h3>
+      <ul class="review" id="review"></ul>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="again">もう一度（別の問題）<span class="en">Try again (new questions)</span></button>
+      <a class="btn ghost" href="index.html#nihongo">ホームページへ<span class="en">Back to home</span></a>
+    </div>
+    <p class="disclaimer">このテストは楽しむための目安で、JLPTの正式な判定や知能検査ではありません。<br>This is a fun estimate, not an official JLPT result or IQ test.</p>
+  </section>
+</main>
+
+<script>
+/* =========================================================
+   ふりがな：「漢字{かんじ}」と書くと、漢字の上に読み方が付く
+   ========================================================= */
+function rb(t){ return String(t).replace(/([一-鿿々〆ヶ]+)\{([^}]+)\}/g, '<ruby>$1<rt>$2</rt></ruby>'); }
+function plain(t){ return String(t).replace(/\{[^}]+\}/g, ''); }
+
+/* =========================================================
+   問題
+   type：analogy＝言葉の関係 / odd＝仲間はずれ / vocab＝言葉の意味 / common＝共通点
+   lv：3＝N3、2＝N2、1＝N1　　d：点数の重み（N3=1, N2=2, N1=3）
+   opts の1番目が正解
+   ========================================================= */
+const BANK = {
+  // ---------- 言葉の関係 ----------
+  A1:{type:'analogy', lv:3, q:['重{おも}い','軽{かる}い','太{ふと}い'], opts:['細{ほそ}い','長{なが}い','重{おも}い','大{おお}きい'], en:'heavy : light = thick : thin'},
+  A2:{type:'analogy', lv:3, q:['目{め}','見{み}る','耳{みみ}'], opts:['聞{き}く','話{はな}す','食{た}べる','書{か}く'], en:'eye : see = ear : hear'},
+  A3:{type:'analogy', lv:3, q:['パン屋{や}','パン','本屋{ほんや}'], opts:['本{ほん}','店員{てんいん}','お金{かね}','図書館{としょかん}'], en:'bakery : bread = bookstore : books'},
+  A4:{type:'analogy', lv:2, q:['医者{いしゃ}','患者{かんじゃ}','弁護士{べんごし}'], opts:['依頼人{いらいにん}','裁判官{さいばんかん}','法律{ほうりつ}','事務所{じむしょ}'], en:'doctor : patient = lawyer : client'},
+  A5:{type:'analogy', lv:2, q:['原因{げんいん}','結果{けっか}','努力{どりょく}'], opts:['成果{せいか}','才能{さいのう}','目標{もくひょう}','苦労{くろう}'], en:'cause : result = effort : achievement'},
+  A6:{type:'analogy', lv:2, q:['増加{ぞうか}','減少{げんしょう}','賛成{さんせい}'], opts:['反対{はんたい}','同意{どうい}','意見{いけん}','会議{かいぎ}'], en:'increase : decrease = agree : oppose'},
+  A7:{type:'analogy', lv:1, q:['促進{そくしん}','抑制{よくせい}','拡大{かくだい}'], opts:['縮小{しゅくしょう}','拡張{かくちょう}','増大{ぞうだい}','削除{さくじょ}'], en:'promote : restrain = expand : shrink'},
+  A8:{type:'analogy', lv:1, q:['謙虚{けんきょ}','傲慢{ごうまん}','勤勉{きんべん}'], opts:['怠惰{たいだ}','誠実{せいじつ}','熱心{ねっしん}','退屈{たいくつ}'], en:'humble : arrogant = hardworking : lazy'},
+  A9:{type:'analogy', lv:1, q:['序論{じょろん}','結論{けつろん}','発端{ほったん}'], opts:['結末{けつまつ}','経緯{けいい}','原因{げんいん}','起源{きげん}'], en:'introduction : conclusion = beginning : ending'},
+
+  // ---------- 仲間はずれ ----------
+  O1:{type:'odd', lv:3, opts:['キャベツ','りんご','バナナ','いちご'], en:'Cabbage is a vegetable. The others are fruits.'},
+  O2:{type:'odd', lv:3, opts:['駅{えき}','電車{でんしゃ}','バス','飛行機{ひこうき}'], en:'A station is a place. The others are vehicles.'},
+  O3:{type:'odd', lv:2, opts:['調理師{ちょうりし}','医師{いし}','看護師{かんごし}','薬剤師{やくざいし}'], en:'A cook does not work in medicine. The others do.'},
+  O4:{type:'odd', lv:2, opts:['減{へ}る','増{ふ}える','伸{の}びる','広{ひろ}がる'], en:'"Decrease" means getting smaller. The others mean getting bigger.'},
+  O5:{type:'odd', lv:1, opts:['唐突{とうとつ}に','漸次{ぜんじ}','徐々{じょじょ}に','次第{しだい}に'], en:'"Suddenly". The others mean "gradually".'},
+  O6:{type:'odd', lv:1, opts:['安堵{あんど}','懸念{けねん}','危惧{きぐ}','憂慮{ゆうりょ}'], en:'"Relief". The others mean "worry".'},
+
+  // ---------- 言葉の意味 ----------
+  V1:{type:'vocab', lv:3, word:'急{いそ}ぐ', opts:['早{はや}くしようとする','ゆっくり休{やす}む','静{しず}かに待{ま}つ','大{おお}きな声{こえ}で話{はな}す'], en:'to hurry'},
+  V2:{type:'vocab', lv:3, word:'なくす', opts:['持{も}っていた物{もの}が、どこかへ行{い}ってしまう','新{あたら}しい物{もの}を買{か}う','物{もの}を人{ひと}にあげる','物{もの}をきれいにする'], en:'to lose'},
+  V3:{type:'vocab', lv:3, word:'すっかり', opts:['全部{ぜんぶ}、完全{かんぜん}に','少{すこ}しだけ','ときどき','もう一度{いちど}'], en:'completely'},
+  V4:{type:'vocab', lv:2, word:'たちまち', opts:['すぐに、あっという間{ま}に','ゆっくりと','ときどき','最後{さいご}に'], en:'in an instant'},
+  V5:{type:'vocab', lv:2, word:'みっともない', opts:['見{み}ていて恥{は}ずかしい','とても美{うつく}しい','とても珍{めずら}しい','少{すこ}しもこわくない'], en:'shameful, unsightly'},
+  V6:{type:'vocab', lv:2, word:'手間{てま}', opts:['何{なに}かをするのにかかる時間{じかん}や力{ちから}','手{て}の大{おお}きさ','仕事{しごと}の給料{きゅうりょう}','人{ひと}を手伝{てつだ}うこと'], en:'time and effort'},
+  V7:{type:'vocab', lv:1, word:'おもむろに', opts:['ゆっくりと、落{お}ち着{つ}いて','突然{とつぜん}','こっそりと','思{おも}いがけず'], en:'slowly and calmly (not "suddenly"!)'},
+  V8:{type:'vocab', lv:1, word:'潔{いさぎよ}い', opts:['思{おも}い切{き}りがよく、未練{みれん}がない','清潔{せいけつ}で美{うつく}しい','体{からだ}が強{つよ}い','声{こえ}が大{おお}きい'], en:'accepting things gracefully, with no regrets'},
+  V9:{type:'vocab', lv:1, word:'やぶさかでない', opts:['喜{よろこ}んでそうする気持{きも}ちがある','どうしても気{き}が進{すす}まない','全然{ぜんぜん}困{こま}っていない','理由{りゆう}がわからない'], en:'willing to do something'},
+
+  // ---------- 共通点 ----------
+  C1:{type:'common', lv:3, pair:['傘{かさ}','帽子{ぼうし}'], opts:['雨{あめ}や日{ひ}ざしから身{み}を守{まも}る','頭{あたま}にかぶる','手{て}で持{も}つ','冬{ふゆ}だけ使{つか}う'], en:'Both protect you from rain or sun.'},
+  C2:{type:'common', lv:3, pair:['冷蔵庫{れいぞうこ}','エアコン'], opts:['電気{でんき}で冷{ひ}やす','台所{だいどころ}にある','食{た}べ物{もの}を入{い}れる','窓{まど}の近{ちか}くにある'], en:'Both use electricity to make things cold.'},
+  C3:{type:'common', lv:2, pair:['地図{ちず}','辞書{じしょ}'], opts:['知{し}りたいことを調{しら}べる道具{どうぐ}','旅行{りょこう}で使{つか}う','学校{がっこう}でだけ使{つか}う','言葉{ことば}の意味{いみ}がのっている'], en:'Both are tools for looking things up.'},
+  C4:{type:'common', lv:2, pair:['保険{ほけん}','貯金{ちょきん}'], opts:['将来{しょうらい}に備{そな}えるためのもの','銀行{ぎんこう}でだけできる','すぐにお金{かね}が増{ふ}える','病気{びょうき}のときだけ使{つか}う'], en:'Both prepare you for the future.'},
+  C5:{type:'common', lv:1, pair:['法律{ほうりつ}','文法{ぶんぽう}'], opts:['守{まも}るべき決{き}まり','国会{こっかい}で決{き}まる','破{やぶ}ると罰{ばつ}がある','一度{いちど}決{き}まると変{か}わらない'], en:'Both are rules to follow.'},
+  C6:{type:'common', lv:1, pair:['謙遜{けんそん}','遠慮{えんりょ}'], opts:['自分{じぶん}を控{ひか}えめにする態度{たいど}','相手{あいて}を責{せ}める態度{たいど}','自分{じぶん}を大{おお}きく見{み}せる態度{たいど}','怒{いか}りを表{あらわ}す態度{たいど}'], en:'Both are ways of holding yourself back.'}
+};
+Object.values(BANK).forEach(q => q.d = 4 - q.lv);   // N3=1点, N2=2点, N1=3点
+
+/* 10問ずつ3パターン。どのパターンにも4種類が入り、同じ種類が続かない */
+const SETS = [
+  ['A1','O1','V1','C3','A4','O4','V4','A7','C6','V7'],
+  ['V2','A2','O2','C1','V5','A5','V8','O6','A8','C5'],
+  ['A3','C2','V3','O3','A6','C4','V6','A9','O5','V9']
+];
+
+const KIND = {
+  analogy:['言葉{ことば}の関係{かんけい}','Relations'],
+  odd:['仲間{なかま}はずれ','Odd one out'],
+  vocab:['言葉{ことば}の意味{いみ}','Meaning'],
+  common:['共通点{きょうつうてん}','Common point']
+};
+const PROMPT = {
+  analogy:['？に入{はい}る言葉{ことば}は？','Which word fits the ? (Same relation as the first pair)'],
+  odd:['仲間{なかま}はずれはどれ？','Which one is different?'],
+  vocab:['この言葉{ことば}の意味{いみ}に、一番{いちばん}近{ちか}いのは？','Which is closest in meaning?'],
+  common:['2つの共通点{きょうつうてん}として、一番{いちばん}ふさわしいのは？','What do these two have in common?']
+};
+
+/* はじめの画面の文字（ふりがな付き） */
+document.getElementById('intro-sub').innerHTML = rb('日本語{にほんご}で考{かんが}える力{ちから}のテスト') + '<span class="en">Japanese Brain Check</span>';
+document.getElementById('sample').innerHTML = rb('右{みぎ}：左{ひだり} ＝ 上{うえ}：') + '<span style="color:var(--shu)">？</span>';
+document.getElementById('f1').innerHTML = rb('問{もん}') + '<span class="en">questions</span>';
+document.getElementById('f2').innerHTML = rb('1問{もん}の時間{じかん}') + '<span class="en">per question</span>';
+document.getElementById('f3').innerHTML = rb('だんだん難{むずか}しく') + '<span class="en">gets harder</span>';
+document.getElementById('howto').innerHTML = rb('JLPTの N3 から N1 までの言葉{ことば}で、考{かんが}える力{ちから}を試{ため}します。最後{さいご}に、あなたの日本語{にほんご}のレベルと、日本語{にほんご}で測{はか}ったIQが分{わ}かります。') +
+  '<span class="en">Questions use words from JLPT N3 to N1. At the end, you will see your JLPT level and your IQ measured in Japanese.</span>';
+
+/* =========================================================
+   進め方
+   ========================================================= */
+const TIME = 45;
+const $ = id => document.getElementById(id);
+let QUESTIONS = [], qi, answers, timer, left, locked, startAt, picks;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  window.scrollTo(0,0);
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function choosePattern(){
+  let last = -1;
+  try { last = parseInt(localStorage.getItem('n1mind-last'), 10); } catch(e){}
+  const choices = [0,1,2].filter(i => i !== last);
+  const pick = choices[Math.floor(Math.random()*choices.length)];
+  try { localStorage.setItem('n1mind-last', String(pick)); } catch(e){}
+  return pick;
+}
+
+function start(){
+  QUESTIONS = SETS[choosePattern()].map(k => BANK[k]);
+  qi = 0; answers = []; picks = []; startAt = Date.now();
+  show('s-quiz');
+  render();
+}
+
+function stageHtml(q){
+  if (q.type === 'analogy') return `<div class="eq">
+      <span class="l">${rb(q.q[0])}</span><span class="c">：</span><span class="r">${rb(q.q[1])}</span>
+      <span class="l">${rb(q.q[2])}</span><span class="c">：</span><span class="r q">？</span></div>`;
+  if (q.type === 'vocab') return `<div class="big">${rb(q.word)}</div>`;
+  if (q.type === 'common') return `<div class="mid">「${rb(q.pair[0])}」と「${rb(q.pair[1])}」</div>`;
+  return '';
+}
+
+function render(){
+  const q = QUESTIONS[qi];
+  locked = false;
+  $('qno').innerHTML = `Q${qi+1}<small> / ${QUESTIONS.length}</small><span class="lv">N${q.lv}</span>`;
+  const p = PROMPT[q.type];
+  $('prompt').innerHTML = rb(p[0]) + `<span class="en">${p[1]}</span>`;
+  const st = stageHtml(q);
+  $('stage').innerHTML = st;
+  $('stage').style.display = st ? '' : 'none';
+
+  const list = shuffle(q.opts.map((o,i) => ({o, right: i===0})));
+  const box = $('opts');
+  box.className = 'opts ' + ((q.type === 'analogy' || q.type === 'odd') ? 'c2' : 'c1');
+  box.innerHTML = '';
+  list.forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opt';
+    b.innerHTML = `<span class="lab">${'ABCD'[i]}</span><span>${rb(item.o)}</span>`;
+    b.setAttribute('aria-label', plain(item.o));
+    b.addEventListener('click', () => pick(b, item));
+    box.appendChild(b);
+  });
+
+  left = TIME;
+  tick();
+  clearInterval(timer);
+  timer = setInterval(() => { left -= .1; tick(); if (left <= 0) pick(null, null); }, 100);
+}
+
+function tick(){
+  const r = Math.max(0, left / TIME);
+  $('timefill').style.transform = `scaleX(${r})`;
+  const hurry = left <= 10;
+  $('timebar').classList.toggle('hurry', hurry);
+  $('clock').classList.toggle('hurry', hurry);
+  $('clock').textContent = Math.ceil(Math.max(0,left)) + 's';
+}
+
+function pick(btn, item){
+  if (locked) return;
+  locked = true;
+  clearInterval(timer);
+  if (btn) btn.classList.add('picked');
+  const q = QUESTIONS[qi];
+  answers.push({right: !!(item && item.right), d:q.d, lv:q.lv, type:q.type});
+  picks.push(item ? item.o : null);
+  setTimeout(() => {
+    qi++;
+    if (qi < QUESTIONS.length) render(); else result();
+  }, btn ? 260 : 400);
+}
+
+/* =========================================================
+   結果
+   ========================================================= */
+// 日本語で測ったIQ（全問正解で120＝このテストの上限）
+function iqFrom(answers){
+  const max = QUESTIONS.reduce((a,q)=>a+q.d, 0);
+  const got = answers.reduce((a,x)=>a+(x.right?x.d:0), 0);
+  const r = got / max;
+  const P = [[0,70],[.3,85],[.6,100],[.85,110],[1,120]];
+  let iq = 120;
+  for (let i=1;i<P.length;i++){
+    if (r <= P[i][0]){ const [r0,v0]=P[i-1],[r1,v1]=P[i]; iq = v0 + (v1-v0)*(r-r0)/(r1-r0); break; }
+  }
+  return Math.round(Math.min(120, Math.max(70, iq)));
+}
+
+// JLPTのレベル：そのレベルの問題の正解率で決める
+function levelFrom(answers){
+  const acc = lv => { const a = answers.filter(x=>x.lv===lv); return a.length ? a.filter(x=>x.right).length / a.length : 0; };
+  const a3 = acc(3), a2 = acc(2), a1 = acc(1);
+  if (a1 >= .6 && a2 >= .5) return 1;
+  if (a2 >= .5 && a3 >= .6) return 2;
+  if (a3 >= .6) return 3;
+  return 4;
+}
+
+const LEVEL_MSG = {
+  1:{title:'N1レベルに届{とど}いています！', en:'You are at N1 level!', top:true,
+     jp:'すばらしい結果{けっか}です。新聞{しんぶん}や小説{しょうせつ}に出{で}てくる難{むずか}しい言葉{ことば}も、意味{いみ}の細{こま}かい違{ちが}いまで分{わ}かる力{ちから}があります。日本語{にほんご}で考{かんが}える「日本語脳{にほんごのう}」が、しっかりできています。',
+     enmsg:'Amazing! You understand even difficult words in newspapers and novels, including small differences in meaning. Your "Japanese brain" is ready.'},
+  2:{title:'N2レベルです', en:'You are at N2 level',
+     jp:'よくできました。ふだんの会話{かいわ}や仕事{しごと}の日本語{にほんご}は、かなり分{わ}かる力{ちから}があります。N1の言葉{ことば}を少{すこ}しずつ覚{おぼ}えていけば、N1まであと少{すこ}しです！',
+     enmsg:'Well done! You understand most everyday and business Japanese. Learn a few more N1 words, and N1 is close!'},
+  3:{title:'N3レベルです', en:'You are at N3 level',
+     jp:'日常{にちじょう}の日本語{にほんご}は、だいぶ分{わ}かっています。言葉{ことば}の数{かず}を増{ふ}やしていくと、N2が見{み}えてきます。「もう一度{いちど}」を押{お}すと、別{べつ}の問題{もんだい}で練習{れんしゅう}できます。',
+     enmsg:'You understand a lot of daily Japanese. Learn more words and N2 will come. Press "Try again" to practice with new questions.'},
+  4:{title:'N4〜N5レベルです', en:'You are at N4–N5 level',
+     jp:'まだ始{はじ}まったばかりです。このテストは N3〜N1 の言葉{ことば}を使{つか}っているので、難{むずか}しくて当然{とうぜん}です。言葉{ことば}を少{すこ}しずつ増{ふ}やしていけば、点数{てんすう}はどんどん上{あ}がります。',
+     enmsg:'You are just getting started. This test uses N3–N1 words, so it is supposed to be hard. Keep learning words and your score will go up fast.'}
+};
+
+function result(){
+  if (window.SND) SND.fx('finish');
+  const iq = iqFrom(answers);
+  const lv = levelFrom(answers);
+  const m = LEVEL_MSG[lv];
+  const correct = answers.filter(a=>a.right).length;
+  const secs = Math.round((Date.now()-startAt)/1000);
+  show('s-result');
+
+  $('lbl-lv').innerHTML = rb('日本語脳{にほんごのう}レベル') + '<span class="en">JLPT level</span>';
+  $('lvnum').textContent = lv === 4 ? 'N4-5' : 'N' + lv;
+  $('lvnum').style.fontSize = lv === 4 ? '44px' : '';
+  $('lbl-iq').innerHTML = rb('日本語{にほんご}で測{はか}ったIQ') + '<span class="en">IQ in Japanese</span>';
+
+  const el = $('iqnum'); const t0 = performance.now(); const dur = 1100;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function up(now){
+    const k = reduce ? 1 : Math.min(1,(now-t0)/dur);
+    el.textContent = Math.round(iq * (1 - Math.pow(1-k,3)));
+    if (k < 1) requestAnimationFrame(up);
+    else if (iq >= 120) el.textContent = '120+';
+  })(t0);
+
+  $('headline').className = 'headline' + (m.top ? ' top' : '');
+  $('headline').innerHTML = rb(m.title) + `<span class="en">${m.en}</span>`;
+  $('subline').textContent = `正解 ${correct}/${QUESTIONS.length} · ${Math.floor(secs/60)}分${secs%60}秒`;
+
+  const iqNote = iq >= 120
+    ? rb('IQは、このテストで測{はか}れるいちばん上{うえ}の120に届{とど}きました。日本語{にほんご}で、ここまで考{かんが}えられるのは本当{ほんとう}にすごいことです。') + '<span class="en">Your IQ reached 120, the top of this test. Thinking this well in a second language is truly impressive.</span>'
+    : rb('このIQは、日本語{にほんご}で測{はか}った数字{すうじ}です。母語{ぼご}で受{う}ければ、もっと高{たか}く出{で}るはずです。日本語{にほんご}が上手{じょうず}になるほど、この数字{すうじ}も上{あ}がっていきます。') + '<span class="en">This IQ was measured in Japanese. In your own language, it would likely be higher. As your Japanese improves, this number will go up too.</span>';
+  $('msg').innerHTML = `<p>${rb(m.jp)}</p><p class="en-block">${m.enmsg}</p><div class="note">${iqNote}</div>`;
+
+  // レベルごとの正解率
+  $('h-meter').innerHTML = rb('レベルごとの正解率{せいかいりつ}') + '<span class="en">Correct answers by level</span>';
+  $('meter').innerHTML = [3,2,1].map(l => {
+    const a = answers.filter(x=>x.lv===l); const pc = Math.round(100*a.filter(x=>x.right).length/a.length);
+    return `<div class="meter-row"><span>N${l}の問題<span class="en">N${l} questions</span></span><div class="track"><i style="width:${pc}%"></i></div><span class="pc">${pc}%</span></div>`;
+  }).join('');
+
+  // 答え合わせ
+  $('h-review').innerHTML = rb('答{こた}え合{あ}わせ') + '<span class="en">Answers</span>';
+  $('review').innerHTML = QUESTIONS.map((q,i) => {
+    const ok = answers[i].right;
+    let title;
+    if (q.type === 'analogy') title = `${rb(q.q[0])}：${rb(q.q[1])} ＝ ${rb(q.q[2])}：？`;
+    else if (q.type === 'vocab') title = rb(q.word);
+    else if (q.type === 'common') title = `「${rb(q.pair[0])}」と「${rb(q.pair[1])}」`;
+    else title = shuffleStable(q.opts).map(rb).join('・');
+    const mine = picks[i] === null ? '時間{じかん}切{ぎ}れ' : picks[i];
+    return `<li><span class="mark ${ok?'ok':'ng'}">${ok?'○':'×'}</span><span style="font-size:11px;font-weight:900;color:var(--ai)">N${q.lv}</span>　${title}
+      <span class="ans">${rb('正解{せいかい}')}：${rb(q.opts[0])}${ok ? '' : `／${rb('あなたの答{こた}え')}：${rb(mine)}`}</span>
+      <span class="gloss">${q.en}</span></li>`;
+  }).join('');
+}
+// 仲間はずれの答え合わせ用：正解が最後に来ない並び（毎回同じ）
+function shuffleStable(a){ return [a[1], a[0], ...a.slice(2)]; }
+
+$('start').addEventListener('click', start);
+$('again').addEventListener('click', start);
+</script>
+
+<!-- ===== 音（効果音とBGM）：音のファイルは使わず、その場で音を作る ===== -->
+<style>
+  body{padding-bottom:64px}
+  .snd-box{position:fixed;right:12px;bottom:12px;z-index:60;display:flex;gap:8px}
+  .snd-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0}
+  .snd-btn svg{width:22px;height:22px;display:block}
+  .snd-btn.off{opacity:.45}
+  .snd-btn:focus-visible{outline:3px solid #888;outline-offset:2px}
+</style>
+<div class="snd-box">
+  <button type="button" class="snd-btn off" id="snd-bgm" aria-label="BGM オン・オフ" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+  </button>
+  <button type="button" class="snd-btn" id="snd-fx" aria-label="効果音 オン・オフ" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+</div>
+<script>
+const SND = (() => {
+  const STYLE = 'yo';      // BGMの雰囲気（アプリごとに変える）
+  const KEY = 'snd-' + STYLE;
+  let ctx = null, master = null, fxOn = true, bgmOn = false, bgmTimer = null, step = 0, nextT = 0;
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s.fx === false) fxOn = false; } catch(e){}
+
+  function init(){
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return true;
+  }
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);   // 音の高さ（MIDI番号→周波数）
+
+  // 1つの音を鳴らす
+  function tone(note, t, dur, vol, type, attack){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = hz(note);
+    const a = attack || .005;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+  }
+
+  // ---------- 効果音 ----------
+  const FX = {
+    tap:    t => tone(84, t, .07, .07, 'triangle'),
+    ok:     t => { tone(76, t, .18, .09, 'triangle'); tone(83, t + .09, .25, .09, 'triangle'); },
+    ng:     t => { tone(55, t, .22, .08, 'square'); tone(52, t + .1, .25, .06, 'square'); },
+    finish: t => { [72,76,79,84].forEach((n,i) => tone(n, t + i*.11, .5, .08, 'triangle')); },
+    pad:    (t, n) => tone(n, t, .25, .1, 'sine')
+  };
+  function fx(name, arg){
+    if (!fxOn || !init()) return;
+    FX[name](ctx.currentTime + .01, arg);
+  }
+
+  // ---------- BGM（ゆっくりした和音のくり返し） ----------
+  const SONGS = {
+    // [和音の並び（MIDI番号）, 1つの和音の長さ（秒）, 上で鳴る音の候補]
+    blue:  [[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,59]], 4, [72,74,76,79,81,83]],   // 明るく考える感じ
+    wa:    [[[50,57,62,65],[48,55,60,64],[46,53,58,62],[45,52,57,64]], 4.5, [74,76,77,81,84,86]], // 和風（都節っぽい）
+    yo:    [[[50,57,62,66],[47,54,59,62],[45,52,57,61],[43,50,55,59]], 4.5, [74,76,78,81,83,86]], // 明るい和風（ヨナ抜き）
+    calm:  [[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]], 6, [69,72,76]]             // 控えめ（記憶のテスト用）
+  };
+  function schedule(){
+    const song = SONGS[STYLE] || SONGS.blue;
+    const [chords, len, mel] = song;
+    while (nextT < ctx.currentTime + 1.5){
+      const ch = chords[step % chords.length];
+      ch.forEach(n => tone(n, nextT, len * 1.1, .022, 'sine', 1.2));         // やわらかい和音
+      const notes = STYLE === 'calm' ? 2 : 4;
+      for (let i = 0; i < notes; i++){                                         // ぽつぽつ鳴る高い音
+        if (Math.random() < .7) tone(mel[Math.floor(Math.random()*mel.length)], nextT + i*(len/notes) + .2, 1.6, .016, 'triangle', .02);
+      }
+      nextT += len; step++;
+    }
+  }
+  function startBgm(){
+    if (!init()) return;
+    nextT = ctx.currentTime + .1; step = 0;
+    schedule(); bgmTimer = setInterval(schedule, 500);
+  }
+  function stopBgm(){ clearInterval(bgmTimer); bgmTimer = null; }
+
+  // ---------- ボタン ----------
+  const bBgm = document.getElementById('snd-bgm'), bFx = document.getElementById('snd-fx');
+  function paint(){
+    bBgm.classList.toggle('off', !bgmOn); bBgm.setAttribute('aria-pressed', bgmOn);
+    bFx.classList.toggle('off', !fxOn);   bFx.setAttribute('aria-pressed', fxOn);
+  }
+  bBgm.addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; bgmOn ? startBgm() : stopBgm(); paint(); });
+  bFx.addEventListener('click', e => {
+    e.stopPropagation(); fxOn = !fxOn; paint();
+    try { localStorage.setItem(KEY, JSON.stringify({fx: fxOn})); } catch(err){}
+    if (fxOn) fx('tap');
+  });
+  paint();
+
+  // ボタンやリンクを押したら、タップ音
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button, a.btn');
+    if (!b || b.classList.contains('snd-btn') || b.dataset.noTap !== undefined) return;
+    fx('tap');
+  });
+
+  return { fx };
+})();
+</script>
+
+</body>
+</html>
