@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>岡本博之（Hiroyuki先生）｜簿記講師・日本語教師</title>
-<meta name="description" content="税理士試験合格、元EY、2009年税理士登録。相続の現場を知る講師による少人数オンライン簿記講座。日本語教師としてJLPT N1・N2も指導。">
+<meta name="description" content="税理士試験合格、元EY、2009年税理士登録、会計専門職大学院の講師を経て独立。相続の現場を知る講師による少人数オンライン簿記講座。日本語教師としてJLPT N1・N2も指導。">
 <meta name="google-site-verification" content="ExbY1OZzopI-goLIodwJeajosId9JgB49CpD2ECevPw" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --night:#121A2B;      /* 濃紺（ヒーロー・フッター） */
@@ -45,13 +45,33 @@
   .hero-roman{font-size:13px;font-weight:500;letter-spacing:.24em;opacity:.75;margin-top:6px}
   .hero-roles{margin-top:18px;font-size:15px;font-weight:700;line-height:1.7}
   .hero-roles span{display:inline-block;margin-right:14px}
-  .hero-cred{margin-top:6px;font-size:13px;opacity:.82;line-height:1.7}
+  .hero-cred{margin-top:8px;font-size:13px;opacity:.85;line-height:1.75;list-style:none}
+  .hero-cred li{white-space:nowrap}
   .social{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
   .social a{
     font-size:13px;font-weight:700;text-decoration:none;color:#fff;
     border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:7px 16px;
   }
   .social a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .social a.price-link{background:#fff;color:var(--night);border-color:#fff}
+
+  /* ===== 料金 ===== */
+  .price-sec{background:var(--mist);padding:52px 0 56px;scroll-margin-top:0}
+  .price-group{margin-top:26px}
+  .price-group:first-of-type{margin-top:0}
+  .price-group h3{font-size:16px;font-weight:900;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+  .price-list{list-style:none}
+  .price-list li{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .price-list .name{font-size:16.5px;font-weight:900;line-height:1.5}
+  .price-list .yen{font-size:24px;font-weight:900;text-align:right;line-height:1.2;white-space:nowrap}
+  .price-list .yen small{font-size:12.5px;font-weight:700;color:var(--sub);margin-left:2px}
+  .price-list .desc{grid-column:1 / -1;font-size:13.5px;color:var(--sub);line-height:1.75}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 9px;margin-left:8px;vertical-align:2px}
+  .tag.open{background:#E3F1E8;color:#23704A}
+  .tag.closed{background:#ECEEF2;color:var(--sub)}
+  .price-list .spec{grid-column:1 / -1;font-size:12.5px;font-weight:700;color:var(--ink);margin-top:-2px}
+  #nihongo-price,#boki-price,#contact,#nihongo-contact{scroll-margin-top:64px}
+  .price-note{font-size:13px;color:var(--sub);margin-top:14px;line-height:1.8}
 
   /* ===== 数字で見る ===== */
   .stats{background:var(--night);color:#fff;border-top:1px solid rgba(255,255,255,.12)}
@@ -119,10 +139,13 @@
   .course li{font-size:14px;padding:8px 0;border-bottom:1px solid var(--line)}
 
   /* ひとこと */
-  .quote-block{background:var(--night);color:#fff;padding:60px 0}
-  .quote{font-size:24px;font-weight:900;line-height:1.7}
-  .quote::before{content:"";display:block;width:40px;height:4px;background:var(--red);margin-bottom:22px}
-  .quote-by{font-size:13px;opacity:.7;margin-top:16px}
+  .quote-block{background:var(--night);color:#fff;padding:64px 0 60px;position:relative;overflow:hidden}
+  .quote{position:relative;font-family:"Shippori Mincho","Hiragino Mincho ProN",serif;font-size:clamp(19px,5.3vw,28px);font-weight:800;line-height:1.85;letter-spacing:.04em;padding-top:56px}
+  .quote::before{content:"";position:absolute;top:0;left:2px;width:22px;height:34px;border-top:5px solid var(--red);border-left:5px solid var(--red)}
+  .quote .nw{white-space:nowrap}
+  .quote .small{display:block;font-size:17px;font-weight:600;opacity:.75;margin-top:14px;letter-spacing:.06em}
+  .quote-by{font-family:"Shippori Mincho",serif;font-size:16px;font-weight:600;margin-top:26px;text-align:right;opacity:.9;letter-spacing:.08em}
+  .quote-by::before{content:"";display:inline-block;width:28px;height:1px;background:currentColor;vertical-align:middle;margin-right:10px;opacity:.6}
 
   /* ボタン */
   .btn{
@@ -193,8 +216,15 @@
     <h1 class="hero-name">岡本 博之</h1>
     <div class="hero-roman">OKAMOTO HIROYUKI</div>
     <div class="hero-roles"><span>簿記講師</span><span>日本語教師</span><span>AIクリエイター</span></div>
-    <div class="hero-cred">税理士試験 合格／元EY（アーンスト・アンド・ヤング）／2009年 税理士登録／2015年 フリーランス簿記講師／2020年 フリーランス日本語教師</div>
+    <ul class="hero-cred">
+      <li>2008年 税理士試験 合格</li>
+      <li>2008〜2014年 EY（アーンスト・アンド・ヤング）</li>
+      <li>2009年 税理士登録</li>
+      <li>2015年 会計専門職大学院 講師（簿記・会計学）</li>
+      <li>2020年 フリーランス簿記講師・日本語教師</li>
+    </ul>
     <div class="social">
+      <a class="price-link" href="#boki-price" id="price-link">料金を見る</a>
       <a href="https://www.facebook.com/share/1HKJCCv4we/" target="_blank" rel="noopener">Facebook</a>
       <a href="https://youtube.com/@nihongo-house" target="_blank" rel="noopener">YouTube</a>
     </div>
@@ -205,10 +235,12 @@
   <div class="wrap">
     <div class="stat"><b>2009<small>年</small></b><span>税理士登録</span></div>
     <div class="stat"><b>8<small>年</small></b><span>相続税の実務</span></div>
-    <div class="stat"><b>40<small>人</small></b><span>日本語を教えた生徒</span></div>
+    <div class="stat"><b>120<small>人</small></b><span>日本語を教えた生徒</span></div>
     <div class="stat"><b>1.2<small>万人</small></b><span>Facebookフォロワー</span></div>
   </div>
 </section>
+
+
 
 <nav class="tabs" aria-label="ページの切り替え">
   <div class="wrap" role="tablist">
@@ -257,44 +289,51 @@
       <ul class="career">
         <li><div class="yr soft">学歴</div><div><h3>関西学院大学 卒業</h3><p>岡山県倉敷市出身。倉敷青陵高校から関西学院大学へ。</p></div></li>
         <li><div class="yr soft">学び</div><div><h3>民法と相続税法を学ぶ</h3><p>「お金と家族の問題は、法律と税金の両方から見ないと解けない」と考え、民法と相続税法を中心に勉強を続ける。</p></div></li>
-        <li><div class="yr soft">EY</div><div><h3>法務部と資産税部門で働く</h3><p>世界4大会計事務所のひとつ、EY（アーンスト・アンド・ヤング）へ。法務部で相続をめぐる家事裁判の実務を支えながら、資産税部門で税法の知識を深める。</p></div></li>
-        <li><div class="yr soft">税理士試験</div><div><h3>税理士試験 合格</h3><p>民法と相続税法の学びに、税と会計の資格が加わる。</p></div></li>
-        <li><div class="yr">2009</div><div><h3>税理士登録</h3><p>EYの資産税部門で5年、相続税の申告と節税の設計に携わる。</p></div></li>
+        <li><div class="yr">2008</div><div><h3>税理士試験 合格</h3><p>民法と相続税法の学びに、税と会計の資格が加わる。</p></div></li>
+        <li><div class="yr">2008</div><div><h3>EYで働く（〜2014年）</h3><p>世界4大会計事務所のひとつ、EY（アーンスト・アンド・ヤング）へ。法務部で相続をめぐる家事裁判の実務を支えながら、資産税部門で税法の知識を深める。</p></div></li>
+        <li><div class="yr">2009</div><div><h3>税理士登録</h3><p>EYに在籍しながら税理士登録。資産税部門で、相続税の申告と節税の設計に携わる。</p></div></li>
         <li><div class="yr soft">事務所</div><div><h3>相続税専門の会計事務所</h3><p>3年間、相続税の相談・申告、遺産分割協議書の作成を担当。</p></div></li>
-        <li><div class="yr">2015</div><div><h3>フリーランス簿記講師に</h3><p>少人数制のオンライン簿記講座を始める。</p></div></li>
-        <li><div class="yr">2020</div><div><h3>フリーランス日本語教師に</h3><p>YouTube「Nihongo House」とオンライン授業で、JLPT N1・N2を指導。</p></div></li>
+        <li><div class="yr">2015</div><div><h3>会計専門職大学院の講師</h3><p>会計の専門家を育てる大学院（アカウンティングスクール）で、簿記と会計学を教える。</p></div></li>
+        <li><div class="yr">2020</div><div><h3>独立。フリーランスの簿記講師・日本語教師に</h3><p>少人数制のオンライン簿記講座を始める。同じ年に日本語教師としても活動を始め、YouTube「Nihongo House」とオンライン授業でJLPT N1・N2を指導。</p></div></li>
         <li><div class="yr">現在</div><div><h3>講師とAIクリエイター</h3><p>授業のかたわら、学べるゲームやアプリを自作して公開。</p></div></li>
       </ul>
       <dl class="profile-mini">
-        <dt>拠点</dt><dd>大阪市</dd>
-        <dt>出身</dt><dd>岡山県倉敷市</dd>
+        <dt>拠点</dt><dd>大阪市北区中之島</dd>
       </dl>
-    </div>
-  </div>
-
-  <div class="block mist">
-    <div class="wrap">
-      <div class="head"><span class="en">Course</span><h2>講座と料金</h2></div>
-      <div class="courses">
-        <div class="course">
-          <h3>簿記3級</h3>
-          <div class="price">16,000円<small>／月</small></div>
-          <ul><li>1回60分</li><li>週2回（月8回）</li><li>はじめての方向け</li></ul>
-        </div>
-        <div class="course">
-          <h3>簿記2級</h3>
-          <div class="price">24,000円<small>／月</small></div>
-          <ul><li>1回90分</li><li>週2回（月8回）</li><li>3級を終えた方向け</li></ul>
-        </div>
-      </div>
-      <p class="note">授業はすべてオンライン・少人数制です。対面の授業は行っていません。</p>
     </div>
   </div>
 
   <div class="quote-block">
     <div class="wrap">
-      <p class="quote">数字にしないものは、直せない。<br>簿記は、お金の流れを数字にして、向き合うための道具です。</p>
-      <p class="quote-by">岡本博之</p>
+      <p class="quote"><span class="nw">人生に、減価償却はない。</span><br><span class="nw">学んだことは、ずっと資産のまま。</span><span class="small">貸借も必ず一致する。<br>だから今日のマイナスは、<br>未来の資産かもしれない…たぶん</span></p>
+      <p class="quote-by">Hiroyuki先生</p>
+    </div>
+  </div>
+
+<!-- ===== 簿記・会計学の料金 ===== -->
+  <div class="block mist price-block" id="boki-price">
+    <div class="wrap">
+      <div class="head"><span class="en">Price</span><h2>簿記・会計学の料金</h2></div>
+  
+      <div class="price-group">
+        <h3>オンライン・少人数制</h3>
+        <ul class="price-list">
+          <li><span class="name">会計学<span class="tag open">受付中</span></span><span class="yen">9,800円<small>／月</small></span>
+            <span class="desc">生きていくための、お金の知恵を学ぶ講座です。「これは資産？それともコスト？」と考える目を養い、決算書には載らない“見えない資産”の考え方まで扱います。投資にも、日々の選択にも役立ちます。</span>
+            <span class="spec">週2回・期間の目安 約2か月</span></li>
+          <li><span class="name">簿記3級<span class="tag open">受付中</span></span><span class="yen">9,800円<small>／月</small></span>
+            <span class="desc">お金の流れを記録し、読み解く力の基本。家計にも投資にも役立つ、賢く生きるための第一歩です。はじめての方向け。</span>
+            <span class="spec">1回60分・週2回・期間の目安 約2か月</span></li>
+          <li><span class="name">簿記2級<span class="tag open">受付中</span></span><span class="yen">12,000円<small>／月</small></span>
+            <span class="desc">簿記の真髄は、ここにあります。会社の数字が本当に読めるようになる段階で、就職や転職でも評価される資格です。3級を終えた方向け。</span>
+            <span class="spec">1回90分・週2回・期間の目安 約4か月</span></li>
+          <li><span class="name">簿記1級<span class="tag open">受付中</span></span><span class="yen">20,000円<small>／月</small></span>
+            <span class="desc">2級を終えた方向け。税理士・公認会計士を目指す方の土台にも。</span>
+            <span class="spec">週2回・期間の目安 約18か月（1年半）</span></li>
+        </ul>
+      </div>
+  
+      <p class="price-note">料金はすべて税込です。授業はすべてオンラインで、対面の授業は行っていません。日本語レッスンの料金は、<a href="#nihongo-price" data-tab="nihongo">日本語教師のページ</a>にあります。</p>
     </div>
   </div>
 
@@ -335,9 +374,9 @@
         <li>1クラス<b>10人ほど</b>の少人数</li>
         <li>N3を受けたことがある方は、N2合格を目指すクラスへ</li>
         <li>N3〜N5だけを目指す授業は行っていません</li>
-        <li>これまでに教えた生徒さんは<b>40人</b></li>
+        <li>これまでに教えた生徒さんは<b>120人</b></li>
       </ul>
-      <p class="note">現在、新しい生徒さんの募集はしていません。</p>
+      <p class="note">クラスレッスンは定員に達したため、現在は新しい生徒さんの募集をしていません。1対1の個別レッスンは受け付けています（料金はページの一番下にあります）。</p>
     </div>
   </div>
 
@@ -366,6 +405,39 @@
       <a class="btn" href="https://youtube.com/@nihongo-house" target="_blank" rel="noopener">Nihongo Houseを見る</a><br>
       <a class="btn line" href="nihongojin.html">日本語レベルチェックを開く</a><br>
       <a class="btn line" href="n1mind.html">N1 MIND／Japanese Brain Check</a>
+    </div>
+  </div>
+  <div class="block price-block" id="nihongo-price">
+    <div class="wrap">
+      <div class="head"><span class="en">Price</span><h2>日本語レッスンの料金</h2></div>
+      <ul class="price-list">
+        <li><span class="name">個別レッスン<span class="tag open">受付中</span></span><span class="yen">10,000円<small>／月</small></span>
+          <span class="desc">先生と1対1。N2・N1合格を目指す方に合わせて進めます。</span>
+          <span class="spec">基本は1回90分・週2回（日時は相談して決められます）・期間 6か月・次のJLPTに向けた授業</span></li>
+        <li><span class="name">クラスレッスン<span class="tag closed">満員のため募集停止中</span></span><span class="yen">5,000円<small>／月</small></span>
+          <span class="desc">10人ほどの少人数クラス。N2クラスとN1クラスがあります。現在は定員に達しているため、新しい募集を止めています。</span>
+          <span class="spec">1回90分・週2回・期間 6か月・次のJLPTに向けた授業</span></li>
+      </ul>
+      <p class="price-note">料金はすべて税込です。JLPTは半年に1回（7月と12月）なので、次の試験に向けて6か月で進めます。</p>
+      <a class="btn" href="#nihongo-contact">個別レッスンの相談・お問い合わせ</a>
+    </div>
+  </div>
+
+
+  <div class="block mist" id="nihongo-contact">
+    <div class="wrap">
+      <div class="head"><span class="en">Contact</span><h2>お問い合わせ</h2></div>
+      <div class="contact-grid">
+        <div>
+          <p class="lead">個別レッスンのご相談は、メールかLINEでどうぞ。</p>
+          <a class="btn" href="mailto:eden-art-heaven@ezweb.ne.jp">メールで問い合わせる</a>
+          <p class="mail">eden-art-heaven@ezweb.ne.jp</p>
+        </div>
+        <div class="qr">
+          <div class="qr-img"><img src="line-qr.jpg" alt="LINEのQRコード"></div>
+          <p>LINEの場合は<br>QRコードを読み取って<br>ください。</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -437,6 +509,21 @@
     if (scroll && window.scrollY > tabBar.offsetTop) window.scrollTo({top:tabBar.offsetTop});
   }
   tabs.forEach(t => t.addEventListener('click', () => openTab(t.getAttribute('aria-controls'), true)));
+  // data-tab の付いたリンク：タブを切り替えてから、その場所へ移動
+  document.querySelectorAll('a[data-tab]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    openTab(a.dataset.tab, false);
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({behavior:'smooth'});
+  }));
+  // 「料金を見る」：日本語教師のタブなら日本語の料金、それ以外は簿記の料金へ
+  document.getElementById('price-link').addEventListener('click', e => {
+    e.preventDefault();
+    const now = document.querySelector('.panel.active').id;
+    const tab = now === 'nihongo' ? 'nihongo' : 'boki';
+    openTab(tab, false);
+    document.getElementById(tab === 'nihongo' ? 'nihongo-price' : 'boki-price').scrollIntoView({behavior:'smooth'});
+  });
   const start = location.hash.replace('#','');
   if (['boki','nihongo','works'].includes(start)) openTab(start, false);
 
