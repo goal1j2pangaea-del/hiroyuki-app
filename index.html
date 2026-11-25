@@ -235,7 +235,7 @@
   <div class="wrap">
     <div class="stat"><b>2009<small>年</small></b><span>税理士登録</span></div>
     <div class="stat"><b>8<small>年</small></b><span>相続税の実務</span></div>
-    <div class="stat"><b>120<small>人</small></b><span>日本語を教えた生徒</span></div>
+    <div class="stat"><b>800<small>人以上</small></b><span>簿記と日本語の教え子</span></div>
     <div class="stat"><b>1.2<small>万人</small></b><span>Facebookフォロワー</span></div>
   </div>
 </section>
@@ -318,13 +318,13 @@
       <div class="price-group">
         <h3>オンライン・少人数制</h3>
         <ul class="price-list">
-          <li><span class="name">会計学<span class="tag open">受付中</span></span><span class="yen">9,800円<small>／月</small></span>
+          <li><span class="name">会計学<span class="tag closed">満員のため募集停止中</span></span><span class="yen">9,800円<small>／月</small></span>
             <span class="desc">生きていくための、お金の知恵を学ぶ講座です。「これは資産？それともコスト？」と考える目を養い、決算書には載らない“見えない資産”の考え方まで扱います。投資にも、日々の選択にも役立ちます。</span>
             <span class="spec">週2回・期間の目安 約2か月</span></li>
           <li><span class="name">簿記3級<span class="tag open">受付中</span></span><span class="yen">9,800円<small>／月</small></span>
             <span class="desc">お金の流れを記録し、読み解く力の基本。家計にも投資にも役立つ、賢く生きるための第一歩です。はじめての方向け。</span>
             <span class="spec">1回60分・週2回・期間の目安 約2か月</span></li>
-          <li><span class="name">簿記2級<span class="tag open">受付中</span></span><span class="yen">12,000円<small>／月</small></span>
+          <li><span class="name">簿記2級<span class="tag closed">満員のため募集停止中</span></span><span class="yen">12,000円<small>／月</small></span>
             <span class="desc">簿記の真髄は、ここにあります。会社の数字が本当に読めるようになる段階で、就職や転職でも評価される資格です。3級を終えた方向け。</span>
             <span class="spec">1回90分・週2回・期間の目安 約4か月</span></li>
           <li><span class="name">簿記1級<span class="tag open">受付中</span></span><span class="yen">20,000円<small>／月</small></span>
@@ -506,7 +506,11 @@
     tabs.forEach(t => t.setAttribute('aria-selected', t.getAttribute('aria-controls') === id));
     panels.forEach(p => p.classList.toggle('active', p.id === id));
     history.replaceState(null, '', '#' + id);
-    if (scroll && window.scrollY > tabBar.offsetTop) window.scrollTo({top:tabBar.offsetTop});
+    // タブを切り替えたら、そのページの一番上（タブのすぐ下）から見せる
+    if (scroll){
+      const top = document.querySelector('main').getBoundingClientRect().top + window.scrollY - tabBar.offsetHeight;
+      if (window.scrollY > top) window.scrollTo({top, behavior:'instant'});
+    }
   }
   tabs.forEach(t => t.addEventListener('click', () => openTab(t.getAttribute('aria-controls'), true)));
   // data-tab の付いたリンク：タブを切り替えてから、その場所へ移動
